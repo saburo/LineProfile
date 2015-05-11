@@ -42,14 +42,37 @@ class PlottingTool:
         self.plotWidget = layout.itemAt(0).widget()
 
     def formatAxes(self, axe1, axe2=None, axe1_colors=u'k', axe2_colors=u'k'):
+        # add grrid to the plot
         axe1.grid()
-        axe1.tick_params(axis="both", which="major", colors=axe1_colors, direction="in", length=10, width=1, bottom=True, top=False, left=True, right=False)
+        # major ticks for left axis with color
+        axe1.tick_params(axis="y", which="major", colors=axe1_colors,
+                         direction="in", length=10, width=1, bottom=True,
+                         top=False, left=True, right=False)
+        # minor ticks for left axis with color
         axe1.minorticks_on()
-        axe1.tick_params(axis="both", which="minor", colors=axe1_colors, direction= "in", length=5, width=1, bottom=True, top=False, left=True, right=False)
+        axe1.tick_params(axis="y", which="minor", colors=axe1_colors,
+                         direction="in", length=5, width=1, bottom=True,
+                         top=False, left=True, right=False)
+
+        
+        # for X axis
+        # major tick
+        axe1.tick_params(axis="x", which="major", colors=u'k',
+                         direction="in", length=10, width=1, bottom=True,
+                         top=False, left=True, right=False)
+        # minor tick
+        axe1.tick_params(axis="x", which="minor", colors=u'k',
+                         direction="in", length=5, width=1, bottom=True,
+                         top=False, left=True, right=False)
+
         if axe2 is not None:
-            axe2.tick_params(axis="y", which="major", colors=axe2_colors, direction= "in", length=10, width=1, bottom=False, top=False, left=False, right=True)
+            axe2.tick_params(axis="y", which="major", colors=axe2_colors,
+                             direction="in", length=10, width=1, bottom=False,
+                             top=False, left=False, right=True)
             axe2.minorticks_on()
-            axe2.tick_params(axis="y", which="minor", colors=axe2_colors, direction= "in", length=5, width=1, bottom=False, top=False, left=False, right=True)
+            axe2.tick_params(axis="y", which="minor", colors=axe2_colors,
+                             direction="in", length=5, width=1, bottom=False,
+                             top=False, left=False, right=True)
 
     def getMarkerSize(self, defaultSize, dataLength):
         maxSize = 50
