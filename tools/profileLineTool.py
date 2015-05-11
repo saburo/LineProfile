@@ -4,12 +4,13 @@ from PyQt4.QtGui import QColor
 from qgis.core import QgsPoint, QGis
 from qgis.gui import QgsMapTool, QgsRubberBand
 
+
 class ProfileLineTool(QgsMapTool):
 
     def __init__(self, canvas, toolbarBtn):
         QgsMapTool.__init__(self, canvas)
         self.canvas = canvas
-        self.toolbarBtn =toolbarBtn
+        self.toolbarBtn = toolbarBtn
         self.terminated = True
         self.rb = QgsRubberBand(canvas, True)  # False = not a polygon
         self.rb.setWidth(4)
@@ -20,25 +21,25 @@ class ProfileLineTool(QgsMapTool):
         self.vertices = []
         self.rasterPoint = []
 
-
     def canvasPressEvent(self, event):
         pt = self.toMapCoordinates(QPoint(event.pos().x(), event.pos().y()))
         if event.button() == Qt.RightButton:
-            if self.terminated == False:
+            if self.terminated is False:
                 self.terminated = True
                 self.addVertex(pt, True)
                 self.emit(SIGNAL('proflineterminated'), {'dummm', 'mmmmy'})
                 return
-        if self.terminated == True:
+        if self.terminated is True:
             self.resetProfileLine()
         self.rb.addPoint(pt, True)
         self.addVertex(pt)
 
     def canvasMoveEvent(self, event):
-        if self.terminated == False:
+        if self.terminated is False:
             plen = self.rb.numberOfVertices()
             if plen > 0:
-                pt = self.toMapCoordinates(QPoint(event.pos().x(), event.pos().y()))
+                pt = self.toMapCoordinates(
+                    QPoint(event.pos().x(), event.pos().y()))
                 self.rb.movePoint(plen - 1, pt)
 
     def canvasReleaseEvent(self, event):
@@ -63,7 +64,6 @@ class ProfileLineTool(QgsMapTool):
         self.resetRasterPoints()
         self.terminated = False
 
-
     def drawTieLine(self, pt1, pt2):
         tl = QgsRubberBand(self.canvas, True)
         tl.setWidth(1)
@@ -86,7 +86,10 @@ class ProfileLineTool(QgsMapTool):
         self.rasterPoint.append(tl)
 
     def addVertex(self, pt1, terminator=False):
-        icon = QgsRubberBand.ICON_FULL_BOX if terminator else QgsRubberBand.ICON_CIRCLE
+        if terminator:
+            icon = QgsRubberBand.ICON_FULL_BOX
+        else:
+            icon = QgsRubberBand.ICON_CIRCLE
         tl = QgsRubberBand(self.canvas, QGis.Point)
         tl.setIconSize(10)
         # tl.setWidth(5)
@@ -116,7 +119,6 @@ class ProfileLineTool(QgsMapTool):
         self.rasterPoint = []
 
     def activate(self):
-        print "activate"
         self.toolbarBtn.setCheckable(True)
         self.toolbarBtn.setChecked(True)
         QgsMapTool.activate(self)

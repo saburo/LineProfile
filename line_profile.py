@@ -20,17 +20,16 @@
  *                                                                         *
  ***************************************************************************/
 """
-from PyQt4.QtCore import QObject, SIGNAL, QSettings, QTranslator, qVersion, QCoreApplication, QVariant
-# from PyQt4.QtCore import *
+from PyQt4.QtCore import QObject, SIGNAL, QSettings, QTranslator, qVersion, \
+                         QCoreApplication, QVariant
+
 from PyQt4.QtGui import QAction, QIcon, QFileDialog, QColorDialog
 
-from qgis.core import QgsVectorLayer, QgsField, QgsFeature, QgsGeometry, QgsMapLayerRegistry, QgsProject, QgsPoint, QgsVectorFileWriter
-
+from qgis.core import QgsVectorLayer, QgsField, QgsFeature, QgsGeometry, \
+                      QgsPoint, QgsVectorFileWriter
 
 # Initialize Qt resources from file resources.py
 import resources_rc
-# Import the code for the dialog
-# from line_profile_dialog import LineProfileDialog
 import os
 
 # Import the code for the DockWidget and ploting
@@ -41,7 +40,9 @@ from ui.dockWidget import DockWidget
 from ui.lpExportDialog import LPExportDialog
 from ui.lpImportDialog import LPImportDialog
 
+
 class LineProfile:
+
     """QGIS Plugin Implementation."""
 
     def __init__(self, iface):
@@ -80,7 +81,6 @@ class LineProfile:
         self.toolbar = self.iface.addToolBar(u'LineProfile')
         self.toolbar.setObjectName(u'LineProfile')
 
-
         # variables
         self.dockOpened = False
         self.dock = None
@@ -91,7 +91,6 @@ class LineProfile:
         self.mapTool = None
         self.plotTool = None
         self.dpTool = None
-
 
     # noinspection PyMethodMayBeStatic
     def tr(self, message):
@@ -108,18 +107,17 @@ class LineProfile:
         # noinspection PyTypeChecker,PyArgumentList,PyCallByClass
         return QCoreApplication.translate('LineProfile', message)
 
-
     def add_action(
-        self,
-        icon_path,
-        text,
-        callback,
-        enabled_flag=True,
-        add_to_menu=True,
-        add_to_toolbar=True,
-        status_tip=None,
-        whats_this=None,
-        parent=None):
+            self,
+            icon_path,
+            text,
+            callback,
+            enabled_flag=True,
+            add_to_menu=True,
+            add_to_toolbar=True,
+            status_tip=None,
+            whats_this=None,
+            parent=None):
         """Add a toolbar icon to the toolbar.
 
         :param icon_path: Path to the icon for this action. Can be a resource
@@ -205,24 +203,25 @@ class LineProfile:
                 action)
             self.iface.removeToolBarIcon(action)
 
-
     def run(self):
         """Run method that performs all the real work"""
 
-        if self.dockOpened == False:
+        if self.dockOpened is False:
             self.dock = DockWidget(self.iface.mainWindow(), self.iface)
             self.dock.showDockWidget()
             self.plotTool.addPlotWidget(self.dock.myFrame)
             self.dockOpened = True
-        QObject.connect(self.canvas, SIGNAL('layersChanged()'), self.refreshDock)
+        QObject.connect(
+            self.canvas, SIGNAL('layersChanged()'), self.refreshDock)
         self.connectDock()
         self.connectTools()
         self.canvas.setMapTool(self.profLineTool)
 
 
-##############################################################################
+###############################################################################
     def deactivatePlugin(self):
-        QObject.disconnect(self.canvas, SIGNAL('layersChanged()'), self.refreshDock)
+        QObject.disconnect(
+            self.canvas, SIGNAL('layersChanged()'), self.refreshDock)
         self.canvas.unsetMapTool(self.profLineTool)
         self.canvas.setMapTool(self.originalMapTool)
         self.disconnectDock()
@@ -231,38 +230,62 @@ class LineProfile:
     def closePlugin(self):
         self.deactivatePlugin()
         self.dockOpened = False
-        print "exit"
 
     def connectDock(self):
-        QObject.connect(self.dock, SIGNAL( "closed(PyQt_PyObject)" ), self.closePlugin)
-        QObject.connect(self.dock.myExportProfileLineBtn, SIGNAL("clicked(bool)"), self.openExportProfileLineDialog)
-        QObject.connect(self.dock.Btn_ImportProfileLine, SIGNAL("clicked(bool)"), self.openImportProfileLineDialog)
-        QObject.connect(self.dock.Btn_ExportPlot, SIGNAL("clicked(bool)"), self.exportPlot)
-        QObject.connect(self.dock.Btn_ChangePlotColor, SIGNAL("clicked(bool)"), self.changePlotColor)
-        QObject.connect(self.dock.ChkBox_TieLine, SIGNAL("stateChanged(int)"), self.updatePlot)
-        QObject.connect(self.dock.Grp_SecondaryY, SIGNAL('clicked()'), self.updatePlot)
-        QObject.connect(self.dock.SpnBox_DistanceLimit, SIGNAL('valueChanged(double)'), self.updatePlot)
+        QObject.connect(
+            self.dock, SIGNAL("closed(PyQt_PyObject)"), self.closePlugin)
+        QObject.connect(self.dock.myExportProfileLineBtn, SIGNAL(
+            "clicked(bool)"), self.openExportProfileLineDialog)
+        QObject.connect(self.dock.Btn_ImportProfileLine, SIGNAL(
+            "clicked(bool)"), self.openImportProfileLineDialog)
+        QObject.connect(
+            self.dock.Btn_ExportPlot, SIGNAL("clicked(bool)"), self.exportPlot)
+        QObject.connect(self.dock.Btn_ChangePlotColor, SIGNAL(
+            "clicked(bool)"), self.changePlotColor)
+        QObject.connect(
+            self.dock.ChkBox_TieLine, SIGNAL("stateChanged(int)"),
+            self.updatePlot)
+        QObject.connect(
+            self.dock.Grp_SecondaryY, SIGNAL('clicked()'), self.updatePlot)
+        QObject.connect(self.dock.SpnBox_DistanceLimit, SIGNAL(
+            'valueChanged(double)'), self.updatePlot)
         QObject.connect(self.dock, SIGNAL('cmboxupdated'), self.updatePlot)
 
     def connectTools(self):
-        QObject.connect(self.profLineTool, SIGNAL('proflineterminated'), self.updatePlot)
-        QObject.connect(self.profLineTool, SIGNAL('doubleClicked'), self.resetPlot)
-        QObject.connect(self.profLineTool, SIGNAL('deactivate'), self.deactivatePlugin)
+        QObject.connect(
+            self.profLineTool, SIGNAL('proflineterminated'), self.updatePlot)
+        QObject.connect(
+            self.profLineTool, SIGNAL('doubleClicked'), self.resetPlot)
+        QObject.connect(
+            self.profLineTool, SIGNAL('deactivate'), self.deactivatePlugin)
 
     def disconnectDock(self):
-        QObject.disconnect(self.dock.myExportProfileLineBtn, SIGNAL("clicked(bool)"), self.openExportProfileLineDialog)
-        QObject.disconnect(self.dock.Btn_ImportProfileLine, SIGNAL("clicked(bool)"), self.openImportProfileLineDialog)
-        QObject.disconnect(self.dock.Btn_ExportPlot, SIGNAL("clicked(bool)"), self.exportPlot)
-        QObject.disconnect(self.dock.Btn_ChangePlotColor, SIGNAL("clicked(bool)"), self.changePlotColor)
-        QObject.disconnect(self.dock.ChkBox_TieLine, SIGNAL("stateChanged(int)"), self.updatePlot)
-        QObject.disconnect(self.dock.Grp_SecondaryY, SIGNAL('clicked()'), self.updatePlot)
-        QObject.disconnect(self.dock.SpnBox_DistanceLimit, SIGNAL('valueChanged(double)'), self.updatePlot)
+        QObject.disconnect(self.dock.myExportProfileLineBtn,
+                           SIGNAL("clicked(bool)"),
+                           self.openExportProfileLineDialog)
+        QObject.disconnect(self.dock.Btn_ImportProfileLine,
+                           SIGNAL("clicked(bool)"),
+                           self.openImportProfileLineDialog)
+        QObject.disconnect(self.dock.Btn_ExportPlot,
+                           SIGNAL("clicked(bool)"), self.exportPlot)
+        QObject.disconnect(self.dock.Btn_ChangePlotColor,
+                           SIGNAL("clicked(bool)"), self.changePlotColor)
+        QObject.disconnect(
+            self.dock.ChkBox_TieLine, SIGNAL("stateChanged(int)"),
+            self.updatePlot)
+        QObject.disconnect(
+            self.dock.Grp_SecondaryY, SIGNAL('clicked()'), self.updatePlot)
+        QObject.disconnect(self.dock.SpnBox_DistanceLimit, SIGNAL(
+            'valueChanged(double)'), self.updatePlot)
         QObject.disconnect(self.dock, SIGNAL('cmboxupdated'), self.updatePlot)
 
     def disconnectTools(self):
-        QObject.disconnect(self.profLineTool, SIGNAL('proflineterminated'), self.updatePlot)
-        QObject.disconnect(self.profLineTool, SIGNAL('doubleClicked'), self.changePlotColor)
-        QObject.disconnect(self.profLineTool, SIGNAL('proflineterminated'), self.updatePlot)
+        QObject.disconnect(self.profLineTool,
+                           SIGNAL('proflineterminated'), self.updatePlot)
+        QObject.disconnect(self.profLineTool,
+                           SIGNAL('doubleClicked'), self.changePlotColor)
+        QObject.disconnect(self.profLineTool,
+                           SIGNAL('proflineterminated'), self.updatePlot)
 
     def changePlotColor(self):
         qd = QColorDialog()
@@ -270,9 +293,11 @@ class LineProfile:
 
     def exportPlot(self):
         fileName = QFileDialog.getSaveFileName(self.iface.mainWindow(),
-                                                "Save As",
-                                                "~/",
-                                                "Images (*.png *.jpg);;Portable Document Format (*.pdf);;Scalable Vector Graphics (*.svg)")
+                                               "Save As",
+                                               "~/",
+                                               "Images (.png, .jpg);;\
+                                               Portable Document Format (.pdf);;\
+                                               Scalable Vector Graphics (.svg)")
         if fileName:
             self.plotTool.savePlot(fileName)
 
@@ -280,8 +305,10 @@ class LineProfile:
         self.dock.updateLayerFieldComboBox()
 
     def updatePlot(self):
-        self.pLines = self.dpTool.getProfileLines(self.profLineTool.getProfPoints())
-        if len(self.pLines) == 0: return False
+        self.pLines = self.dpTool.getProfileLines(
+            self.profLineTool.getProfPoints())
+        if len(self.pLines) == 0:
+            return False
 
         # initialize tie lines
         self.dpTool.initTieLines()
@@ -290,24 +317,27 @@ class LineProfile:
         layer1 = self.getLayerById(self.dock.currentPLayer)
         # layer1 = self.canvas.layer(self.dock.myLayers.currentIndex())
         field1 = self.dock.myFields.currentText()
-        if not field1: return False
+        if not field1:
+            return False
 
         distLimit = self.dock.SpnBox_DistanceLimit.value()
 
-        if layer1.type() == 0: # vector
-            data1 = self.dpTool.getVectorProfile(self.pLines, layer1, field1, distLimit)
+        if layer1.type() == 0:  # vector
+            data1 = self.dpTool.getVectorProfile(
+                self.pLines, layer1, field1, distLimit)
         else:
             data1 = self.dpTool.getRasterProfile(self.pLines, layer1, field1)
 
         # secondary-Y axis
         if self.dock.Grp_SecondaryY.isChecked():
             layer2 = self.getLayerById(self.dock.currentSLayer)
-            # layer2 = self.canvas.layer(self.dock.mySecondLayers.currentIndex())
             field2 = self.dock.mySecondFields.currentText()
-            if layer2.type() == 0: # vector
-                data2 = self.dpTool.getVectorProfile(self.pLines, layer2, field2, distLimit)
+            if layer2.type() == 0:  # vector
+                data2 = self.dpTool.getVectorProfile(
+                    self.pLines, layer2, field2, distLimit)
             else:
-                data2 = self.dpTool.getRasterProfile(self.pLines, layer2, field2)
+                data2 = self.dpTool.getRasterProfile(
+                    self.pLines, layer2, field2)
         else:
             layer2 = None
             field2 = None
@@ -319,10 +349,11 @@ class LineProfile:
                 self.profLineTool.drawTieLine(pt[0], pt[1])
 
         # draw line profile
-        self.plotTool.drawPlot( self.pLines,
-                                data1, data2,
-                                label1=field1,
-                                label2=field2)
+        self.plotTool.drawPlot(self.pLines,
+                               data1, data2,
+                               label1=field1,
+                               label2=field2)
+
     def resetPlot(self):
         # self.plotWdg.figure.clear()
         self.plotTool.resetPlot()
@@ -332,7 +363,8 @@ class LineProfile:
         self.expPLDialog.show()
         if self.expPLDialog.exec_():
             if self.expPLDialog.Grp_SaveShapeFileAs.isChecked():
-                shapeFilePath = self.sanitizePath(self.expPLDialog.shapeFileName)
+                shapeFilePath = self.sanitizePath(
+                    self.expPLDialog.shapeFileName)
                 self.exportProfileLineAsShapeFile(shapeFilePath)
             if self.expPLDialog.Grp_AddField.isChecked():
                 self.addDistanceToAttribute()
@@ -394,29 +426,37 @@ class LineProfile:
         distLimit = self.dock.SpnBox_DistanceLimit.value()
         if layer1.type() == 0:
             dataProvider = layer1.dataProvider()
-            dataProvider.addAttributes([QgsField(newFieldName, QVariant.Double)])
+            dataProvider.addAttributes(
+                [QgsField(newFieldName, QVariant.Double)])
             layer1.updateFields()
-            self.dpTool.getVectorProfile(self.pLines, layer1, field1, distLimit, newFieldName)
+            self.dpTool.getVectorProfile(
+                self.pLines, layer1, field1, distLimit, newFieldName)
 
         if self.dock.Grp_SecondaryY.isChecked():
             layer2 = self.getLayerById(self.dock.currentSLayer)
             field2 = self.dock.mySecondFields.currentText()
             if layer2.type() == 0:
                 dataProvider = layer2.dataProvider()
-                dataProvider.addAttributes([QgsField(newFieldName, QVariant.Double)])
+                dataProvider.addAttributes(
+                    [QgsField(newFieldName, QVariant.Double)])
                 layer2.updateFields()
-                self.dpTool.getVectorProfile(self.pLines, layer2, field2, distLimit, newFieldName)
+                self.dpTool.getVectorProfile(
+                    self.pLines, layer2, field2, distLimit, newFieldName)
 
     def openImportProfileLineDialog(self):
         self.impPLDialog = LPImportDialog(self.iface)
         self.impPLDialog.show()
         if self.impPLDialog.exec_():
             if self.impPLDialog.RadBtn_FileSelect.isChecked():
-                shapeFilePath = self.sanitizePath(self.impPLDialog.TBox_ShapeFilePath.text())
-                shapeFileName = os.path.basename(shapeFilePath.split(os.extsep)[0])
-                layer = self.iface.addVectorLayer(shapeFilePath , shapeFileName, 'ogr')
+                shapeFilePath = self.sanitizePath(
+                    self.impPLDialog.TBox_ShapeFilePath.text())
+                shapeFileName = os.path.basename(
+                    shapeFilePath.split(os.extsep)[0])
+                layer = self.iface.addVectorLayer(
+                    shapeFilePath, shapeFileName, 'ogr')
             else:
-                layerId = self.impPLDialog.CmbBox_LayerSelect.itemData(self.impPLDialog.CmbBox_LayerSelect.currentIndex())
+                layerId = self.impPLDialog.CmbBox_LayerSelect.itemData(
+                    self.impPLDialog.CmbBox_LayerSelect.currentIndex())
                 layer = self.getLayerById(layerId)
             self.importProfileLine(layer)
 
@@ -435,7 +475,8 @@ class LineProfile:
 
     def getLayerById(self, lid):
         for layer in self.canvas.layers():
-            if lid == layer.id(): return layer
+            if lid == layer.id():
+                return layer
         return False
 
     def sanitizePath(self, path):

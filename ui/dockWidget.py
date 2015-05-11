@@ -8,6 +8,7 @@ import os
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'dockWidget.ui'))
 
+
 class DockWidget(QDockWidget, FORM_CLASS):
 
     plotWdg = None
@@ -15,6 +16,7 @@ class DockWidget(QDockWidget, FORM_CLASS):
     currentSLayer = None
 
     """docstring for DockWidget"""
+
     def __init__(self, parent, iface1):
         QDockWidget.__init__(self, parent)
         self.setAttribute(Qt.WA_DeleteOnClose)
@@ -27,23 +29,30 @@ class DockWidget(QDockWidget, FORM_CLASS):
 
         self.Grp_SecondaryY.setChecked(False)
 
-        QObject.connect(self.myLayers, SIGNAL("currentIndexChanged(int)"), self.myLayersChanged)
-        QObject.connect(self.myFields, SIGNAL("currentIndexChanged(int)"), self.myFieldsChanged)
-        QObject.connect(self.mySecondLayers, SIGNAL("currentIndexChanged(int)"), self.mySecondLayersChanged)
-        QObject.connect(self.mySecondFields, SIGNAL("currentIndexChanged(int)"), self.mySecondFieldsChanged)
-        QObject.connect(self.myExportProfileLineBtn, SIGNAL("clicked(bool)"), self.mySecondFieldsChanged)
+        QObject.connect(
+            self.myLayers, SIGNAL("currentIndexChanged(int)"),
+            self.myLayersChanged)
+        QObject.connect(
+            self.myFields, SIGNAL("currentIndexChanged(int)"),
+            self.myFieldsChanged)
+        QObject.connect(self.mySecondLayers, SIGNAL(
+            "currentIndexChanged(int)"), self.mySecondLayersChanged)
+        QObject.connect(self.mySecondFields, SIGNAL(
+            "currentIndexChanged(int)"), self.mySecondFieldsChanged)
+        QObject.connect(self.myExportProfileLineBtn, SIGNAL(
+            "clicked(bool)"), self.mySecondFieldsChanged)
 
         self.updateLayerFieldComboBox()
 
     def closeEvent(self, event):
-		self.emit( SIGNAL( "closed(PyQt_PyObject)" ), self )
-		return QDockWidget.closeEvent(self, event)
+        self.emit(SIGNAL("closed(PyQt_PyObject)"), self)
+        return QDockWidget.closeEvent(self, event)
 
     def showDockWidget(self):
         self.location = Qt.BottomDockWidgetArea
         self.iface.mapCanvas().setRenderFlag(False)
 
-        #Draw the widget
+        # Draw the widget
         self.iface.addDockWidget(self.location, self)
 
         self.iface.mapCanvas().setRenderFlag(True)
@@ -61,14 +70,17 @@ class DockWidget(QDockWidget, FORM_CLASS):
         if canvas.layerCount() > 0:
             # First Fields
             currentPLayerIndex = self.myLayers.findData(self.currentPLayer)
-            if currentPLayerIndex < 0: currentPLayerIndex = 0
+            if currentPLayerIndex < 0:
+                currentPLayerIndex = 0
             pLayer = canvas.layer(currentPLayerIndex)
             self.currentPLayer = pLayer.id()
             self.myLayers.setCurrentIndex(currentPLayerIndex)
             self.updateFields(pLayer, self.myFields)
             # Second Fields
-            currentSLayerIndex = self.mySecondLayers.findData(self.currentSLayer)
-            if currentSLayerIndex < 0: currentSLayerIndex = 0
+            currentSLayerIndex = self.mySecondLayers.findData(
+                self.currentSLayer)
+            if currentSLayerIndex < 0:
+                currentSLayerIndex = 0
             sLayer = canvas.layer(currentSLayerIndex)
             self.currentSLayer = sLayer.id()
             self.mySecondLayers.setCurrentIndex(currentSLayerIndex)
@@ -85,12 +97,13 @@ class DockWidget(QDockWidget, FORM_CLASS):
     def updateFields(self, layer, targetFields):
         self.fieldsUpdateFlag = True
         targetFields.clear()
-        if not layer: return False
+        if not layer:
+            return False
         dp = layer.dataProvider()
-        if layer.type(): #raster layer
+        if layer.type():  # raster layer
             for i in range(0, layer.bandCount()):
-                targetFields.addItem(layer.bandName(i+1))
-        else: #vector layer
+                targetFields.addItem(layer.bandName(i + 1))
+        else:  # vector layer
             fields = dp.fields()
             for f in fields:
                 # numeric fields only // type: int = 2, double = 6
@@ -99,7 +112,8 @@ class DockWidget(QDockWidget, FORM_CLASS):
         self.fieldsUpdateFlag = False
 
     def myLayersChanged(self, index):
-        if self.layersUpdateFlag: return False
+        if self.layersUpdateFlag:
+            return False
 
         if index < 0:
             layer = None
@@ -110,7 +124,8 @@ class DockWidget(QDockWidget, FORM_CLASS):
         self.emit(SIGNAL('cmboxupdated'))
 
     def mySecondLayersChanged(self, index):
-        if self.layersUpdateFlag: return False
+        if self.layersUpdateFlag:
+            return False
 
         if index < 0:
             layer = None
@@ -119,7 +134,6 @@ class DockWidget(QDockWidget, FORM_CLASS):
             self.currentSLayer = layer.id()
         self.updateFields(layer, self.mySecondFields)
         self.emit(SIGNAL('cmboxupdated'))
-
 
     def myFieldsChanged(self, index):
         if not self.fieldsUpdateFlag:
