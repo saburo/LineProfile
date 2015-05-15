@@ -3,11 +3,11 @@ from PyQt4.QtCore import QPyNullVariant
 from math import atan, cos, sin, sqrt
 from qgis.core import QgsPoint, QgsRaster
 
-
 class DataProcessingTool():
 
     def __init__(self):
         self.tieLine = []
+        self.samplingPoints = []
 
     def getProfileLines(self, profilePoints):
         out = []
@@ -79,49 +79,54 @@ class DataProcessingTool():
     def getRasterProfile(self, pLines, layer, band=1):
         x = []
         y = []
+        self.initSamplingPoints()
+        pixelSize = layer.rasterUnitsPerPixelX()
         dp = layer.dataProvider()
         band = int(band.replace('Band ', ''))
-        cP = 0
-        tmpD = 0
-        totalD = self.sumD(pLines)
-        tmpDMax = self.sumD(pLines[0:cP + 1])
+        cP = 0  # index number of current segment
+        tmpD = 0  # current distance within current segment
+        totalD = self.sumD(pLines)  # total distance of profile line
+        tmpDMax = self.sumD(pLines[0:cP + 1])  # max distance of current segment
         tmpX, tmpY = pLines[cP]['start']
         while tmpD < totalD:
+            # first point of each segment
             if tmpD >= tmpDMax or tmpD == 0:
-                if pLines[cP]['end'][0] > pLines[cP]['start'][0]:
-                    direction = 1
-                # vertical
-                elif pLines[cP]['end'][0] == pLines[cP]['start'][0]:
-                    direction = 1 if pLines[cP]['end'][
-                        1] > pLines[cP]['start'][1] else -1
-                else:
-                    direction = -1
-                slope = 1 if pLines[cP]['a'] >= 0 else -1
-                if pLines[cP]['b'] is not 0:
-                    dX = abs(cos(atan(pLines[cP]['a']))) * direction
-                else:
-                    dX = 0
-                dY = abs(sin(atan(pLines[cP]['a']))) * direction * \
-                    slope if pLines[cP]['b'] is not 0 else 1 * direction
                 if tmpD > 0:
+                    cP += 1
                     tmpD = tmpDMax
                     tmpX = pLines[cP]['start'][0]
                     tmpY = pLines[cP]['start'][1]
                     tmpDMax = self.sumD(pLines[0:cP + 1])
-                    cP += 1
+
+                slope, direction = self.getDirectionSlope(pLines[cP])
+                if slope is False:  # vertical
+                    dX = 0
+                    dY = 1
+                    if pLines[cP]['start'][1] > pLines[cP]['end'][1]:
+                        dY = -1
+                else:
+                    dX = abs(cos(atan(pLines[cP]['a']))) * direction
+                    dY = abs(sin(atan(pLines[cP]['a']))) * direction * slope 
+
+                # scale by pixel size of raster layer
+                dX *= pixelSize
+                dY *= pixelSize
+
             res = dp.identify(QgsPoint(tmpX, tmpY),
                               QgsRaster.IdentifyFormatValue).results()
             y.append(res[band])
             x.append(tmpD)
+            self.samplingPoints.append(QgsPoint(tmpX, tmpY))
             tmpX += dX
             tmpY += dY
-            tmpD += 1
+            tmpD += pixelSize
         else:
             endPoint = pLines[len(pLines) - 1]['end']
             res = dp.identify(QgsPoint(endPoint[0], endPoint[1]),
                               QgsRaster.IdentifyFormatValue).results()
             y.append(res[band])
             x.append(totalD)
+            self.samplingPoints.append(QgsPoint(endPoint[0], endPoint[1]))
         return [x, y]
 
     def getProjectedPoint(self, pLines, pt, distLimit):
@@ -261,3 +266,34 @@ class DataProcessingTool():
 
     def initTieLines(self):
         self.tieLine = []
+
+    def initSamplingPoints(self):
+        self.samplingPoints = []
+
+    def getSamplingPoints(self):
+        return self.samplingPoints
+
+    def getDirectionSlope(self, pt):
+        start = pt['start']
+        end   = pt['end']
+
+        if end[0] > start[0]:
+            direction = 1
+            if end[1] > start[1]:
+                slope = 1
+            elif end[1] < start[1]:
+                slope = -1
+            else:
+                slope = 0
+        elif end[0] < start[0]:
+            direction = -1
+            if end[1] < start[1]:
+                slope = 1
+            elif end[1] > start[1]:
+                slope = -1
+            else:
+                slope = 0
+        else:
+            slope = False
+            direction = False
+        return [slope, direction]

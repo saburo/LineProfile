@@ -92,6 +92,8 @@ class LineProfile:
         self.plotTool = None
         self.dpTool = None
 
+        self.debugFlag = False
+
     # noinspection PyMethodMayBeStatic
     def tr(self, message):
         """Get the translation for a string using Qt translation API.
@@ -313,6 +315,8 @@ class LineProfile:
         # initialize tie lines
         self.dpTool.initTieLines()
         self.profLineTool.resetTieLies()
+        # initialize sampling points on raster layer for debugging
+        self.dpTool.initSamplingPoints()
 
         layer1 = self.getLayerById(self.dock.currentPLayer)
         # layer1 = self.canvas.layer(self.dock.myLayers.currentIndex())
@@ -347,6 +351,11 @@ class LineProfile:
         if self.dock.ChkBox_TieLine.isChecked():
             for pt in self.dpTool.getTieLines():
                 self.profLineTool.drawTieLine(pt[0], pt[1])
+
+            # draw sampling points on raster layer for debugging
+            if self.debugFlag is True:
+                for pt in self.dpTool.getSamplingPoints():
+                    self.profLineTool.addVertex2(pt)
 
         # draw line profile
         self.plotTool.drawPlot(self.pLines,
