@@ -101,7 +101,16 @@
        <property name="sizeConstraint">
         <enum>QLayout::SetMaximumSize</enum>
        </property>
-       <property name="margin">
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
         <number>0</number>
        </property>
       </layout>
@@ -129,7 +138,7 @@
       </property>
       <property name="font">
        <font>
-        <pointsize>12</pointsize>
+        <pointsize>10</pointsize>
        </font>
       </property>
       <property name="tabPosition">
@@ -139,7 +148,7 @@
        <enum>QTabWidget::Triangular</enum>
       </property>
       <property name="currentIndex">
-       <number>0</number>
+       <number>1</number>
       </property>
       <property name="elideMode">
        <enum>Qt::ElideRight</enum>
@@ -207,12 +216,21 @@
         </property>
         <layout class="QVBoxLayout" stretch="0,0,0,0">
          <property name="spacing">
-          <number>-1</number>
+          <number>6</number>
          </property>
          <property name="sizeConstraint">
           <enum>QLayout::SetDefaultConstraint</enum>
          </property>
-         <property name="margin">
+         <property name="leftMargin">
+          <number>0</number>
+         </property>
+         <property name="topMargin">
+          <number>0</number>
+         </property>
+         <property name="rightMargin">
+          <number>0</number>
+         </property>
+         <property name="bottomMargin">
           <number>0</number>
          </property>
          <item>
@@ -225,7 +243,7 @@
            </property>
            <property name="font">
             <font>
-             <pointsize>12</pointsize>
+             <pointsize>10</pointsize>
              <weight>75</weight>
              <bold>true</bold>
             </font>
@@ -308,7 +326,7 @@
               </property>
               <property name="font">
                <font>
-                <pointsize>12</pointsize>
+                <pointsize>10</pointsize>
                 <weight>50</weight>
                 <bold>false</bold>
                </font>
@@ -343,7 +361,9 @@
               </property>
               <property name="font">
                <font>
-                <pointsize>12</pointsize>
+                <pointsize>10</pointsize>
+                <weight>50</weight>
+                <bold>false</bold>
                </font>
               </property>
               <property name="text">
@@ -370,7 +390,7 @@
            </property>
            <property name="font">
             <font>
-             <pointsize>12</pointsize>
+             <pointsize>10</pointsize>
              <weight>75</weight>
              <bold>true</bold>
             </font>
@@ -468,7 +488,7 @@
               </property>
               <property name="font">
                <font>
-                <pointsize>12</pointsize>
+                <pointsize>10</pointsize>
                 <weight>50</weight>
                 <bold>false</bold>
                </font>
@@ -503,7 +523,7 @@
               </property>
               <property name="font">
                <font>
-                <pointsize>12</pointsize>
+                <pointsize>10</pointsize>
                 <weight>50</weight>
                 <bold>false</bold>
                </font>
@@ -541,7 +561,7 @@
            </property>
            <property name="font">
             <font>
-             <pointsize>13</pointsize>
+             <pointsize>10</pointsize>
             </font>
            </property>
            <property name="text">
@@ -578,7 +598,7 @@
           <x>0</x>
           <y>0</y>
           <width>175</width>
-          <height>191</height>
+          <height>201</height>
          </rect>
         </property>
         <property name="sizePolicy">
@@ -618,11 +638,20 @@
          <number>0</number>
         </property>
         <layout class="QVBoxLayout" name="verticalLayout_2">
-         <property name="margin">
+         <property name="leftMargin">
+          <number>0</number>
+         </property>
+         <property name="topMargin">
+          <number>0</number>
+         </property>
+         <property name="rightMargin">
+          <number>0</number>
+         </property>
+         <property name="bottomMargin">
           <number>0</number>
          </property>
          <item>
-          <widget class="QToolButton" name="myExportProfileLineBtn">
+          <widget class="QPushButton" name="myExportProfileLineBtn">
            <property name="sizePolicy">
             <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
              <horstretch>0</horstretch>
@@ -635,18 +664,30 @@
              <height>0</height>
             </size>
            </property>
+           <property name="font">
+            <font>
+             <family>MS Shell Dlg 2</family>
+             <pointsize>10</pointsize>
+            </font>
+           </property>
            <property name="text">
             <string>Export Profile Line</string>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="QToolButton" name="Btn_ImportProfileLine">
+          <widget class="QPushButton" name="Btn_ImportProfileLine">
            <property name="sizePolicy">
             <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
              <horstretch>0</horstretch>
              <verstretch>0</verstretch>
             </sizepolicy>
+           </property>
+           <property name="font">
+            <font>
+             <family>MS Shell Dlg 2</family>
+             <pointsize>10</pointsize>
+            </font>
            </property>
            <property name="text">
             <string>Import Profile Line</string>
@@ -654,7 +695,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QToolButton" name="Btn_ChangePlotColor">
+          <widget class="QPushButton" name="Btn_ChangePlotColor">
            <property name="enabled">
             <bool>false</bool>
            </property>
@@ -664,21 +705,46 @@
              <verstretch>0</verstretch>
             </sizepolicy>
            </property>
+           <property name="font">
+            <font>
+             <family>MS Shell Dlg 2</family>
+             <pointsize>10</pointsize>
+            </font>
+           </property>
            <property name="text">
             <string>Change Plot Colors</string>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="QToolButton" name="Btn_ExportPlot">
+          <widget class="QPushButton" name="Btn_ExportPlot">
            <property name="sizePolicy">
             <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
              <horstretch>0</horstretch>
              <verstretch>0</verstretch>
             </sizepolicy>
            </property>
+           <property name="font">
+            <font>
+             <family>MS Shell Dlg 2</family>
+             <pointsize>10</pointsize>
+            </font>
+           </property>
            <property name="text">
             <string>Export Plot</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="pushButton">
+           <property name="font">
+            <font>
+             <family>MS Shell Dlg 2</family>
+             <pointsize>10</pointsize>
+            </font>
+           </property>
+           <property name="text">
+            <string>Export Raster Profile Data</string>
            </property>
           </widget>
          </item>
@@ -691,7 +757,8 @@
             <widget class="QLabel" name="label_5">
              <property name="font">
               <font>
-               <pointsize>11</pointsize>
+               <family>MS Shell Dlg 2</family>
+               <pointsize>10</pointsize>
               </font>
              </property>
              <property name="text">
@@ -704,9 +771,16 @@
            </item>
            <item>
             <widget class="QDoubleSpinBox" name="SpnBox_DistanceLimit">
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>24</height>
+              </size>
+             </property>
              <property name="font">
               <font>
-               <pointsize>11</pointsize>
+               <family>MS Shell Dlg 2</family>
+               <pointsize>10</pointsize>
               </font>
              </property>
              <property name="focusPolicy">
