@@ -13,11 +13,11 @@ class ProfileLineTool(QgsMapTool):
         self.toolbarBtn = toolbarBtn
         self.terminated = True
         self.rb = QgsRubberBand(canvas, True)  # False = not a polygon
-        self.rb.setWidth(4)
-        self.rb.setColor(QColor(255, 100, 100, 250))
+        self.rb.setWidth(2)
+        self.rb.setColor(QColor(255, 20, 20, 250))
         self.rb.setIcon(QgsRubberBand.ICON_CIRCLE)
 
-        self.tielines = []
+        self.tieLines = []
         self.vertices = []
         self.rasterPoint = []
 
@@ -50,9 +50,10 @@ class ProfileLineTool(QgsMapTool):
         self.resetProfileLine()
 
     def getProfPoints(self):
+        # [[x0, y0], [x1, y1], [x2, y2],. ., [xn, yn]]
         n = self.rb.numberOfVertices()
         profVertices = []
-        for i in range(0, n):
+        for i in xrange(n):
             pt = self.rb.getPoint(0, i)
             profVertices.append([pt.x(), pt.y()])
         return profVertices
@@ -70,12 +71,11 @@ class ProfileLineTool(QgsMapTool):
         tl.setColor(QColor(255, 255, 100, 200))
         tl.addPoint(QgsPoint(pt1[0], pt1[1]), True)
         tl.addPoint(QgsPoint(pt2[0], pt2[1]), True)
-        self.tielines.append(tl)
+        self.tieLines.append(tl)
 
     def resetTieLies(self):
-        for tl in self.tielines:
-            tl.reset()
-        self.tielines = []
+        [tl.reset() for tl in self.tieLines]
+        self.tieLines = []
 
     def addVertex2(self, pt1):
         tl = QgsRubberBand(self.canvas, QGis.Point)
@@ -109,22 +109,21 @@ class ProfileLineTool(QgsMapTool):
         self.addVertex(points[i + 1], True)
 
     def resetVertices(self):
-        for tl in self.vertices:
-            tl.reset()
+        [tl.reset() for tl in self.vertices]
         self.vertices = []
 
     def resetRasterPoints(self):
-        for tl in self.rasterPoint:
-            tl.reset()
+        [tl.reset() for tl in self.rasterPoint]
         self.rasterPoint = []
 
-    def activate(self):
-        self.toolbarBtn.setCheckable(True)
-        self.toolbarBtn.setChecked(True)
-        QgsMapTool.activate(self)
+    # def activate(self):
+    #     self.toolbarBtn.setCheckable(True)
+    #     self.toolbarBtn.setChecked(True)
+    #     QgsMapTool.activate(self)
 
-    def deactivate(self):
-        QgsMapTool.deactivate(self)
-        self.toolbarBtn.setCheckable(False)
-        self.resetProfileLine()
-        self.emit(SIGNAL('deactivate'))
+    # def deactivate(self):
+    #     QgsMapTool.deactivate(self)
+    #     self.toolbarBtn.setCheckable(False)
+        # self.resetProfileLine()
+        # print 'signal emitting (deactivate)'
+        # self.emit(SIGNAL('deactivate'))

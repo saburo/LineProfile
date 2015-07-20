@@ -7,19 +7,20 @@ class DataProcessingTool():
 
     def __init__(self):
         self.tieLine = []
+        self.tieLineFlag = {}
         self.samplingPoints = []
 
     def getProfileLines(self, profilePoints):
         out = []
-        for i in range(0, len(profilePoints) - 1):
+        for i in xrange(len(profilePoints) - 1):
             pt1 = profilePoints[i]
             pt2 = profilePoints[i + 1]
             a, b = self.calcSlopeIntercept(pt1, pt2)
             out.append({
-                'start': pt1,
-                'end':   pt2,
-                'a': a,
-                'b': b,
+                'start': pt1,   # [x, y]
+                'end':   pt2,   # [x, y]
+                'a': a,         # slope
+                'b': b,         # intercept
                 'd': self.getDistance(pt1, pt2)
             })
         return out
@@ -37,13 +38,15 @@ class DataProcessingTool():
 
         if distanceField:
             layer.startEditing()
-
+        lid = layer.id()
+        if lid in self.tieLineFlag.keys() and self.tieLineFlag[lid]:
+            tieLineFlag = True
+        else:
+            tieLineFlag = False
         for f in featuresForPlot:
             # calc coordinate of intercept between normal line and profile line
-
             if type(f.attribute(field)) is type(QPyNullVariant(int)):
                 continue
-
             pt = f.geometry().asPoint()
             prjProint = self.getProjectedPoint(pLines, pt, distLimit)
             if prjProint is not False:
@@ -52,7 +55,8 @@ class DataProcessingTool():
                                       pLines[prjProint[2]]['start'])
                 x.append(d)
                 y.append(f.attribute(field))
-                self.addTieLine(pt, prjProint[:2])
+                if not tieLineFlag:
+                    self.addTieLine(pt, prjProint[:2])
                 if distanceField:
                     f[distanceField] = d
                     layer.updateFeature(f)
@@ -60,6 +64,7 @@ class DataProcessingTool():
         if distanceField:
             layer.commitChanges()
         x, y = self.sortDataByX(x, y)
+        self.tieLineFlag[lid] = True
 
         return [x, y]
 
@@ -76,13 +81,36 @@ class DataProcessingTool():
     def sumD(self, pLines):
         return reduce(lambda x, y: x + y['d'], pLines, 0.0)
 
-    def getRasterProfile(self, pLines, layer, band=1):
+    def getCurrentCoordinates(self, pLines, dist):
+        d = 0.0
+        for k, v in enumerate(pLines):
+            d += v['d']
+            if dist < d:
+                dist -= d - v['d']
+                break
+        cu = pLines[k]
+        if cu['a'] == float('inf') or (cu['a'] == 0 and cu['b'] == 0):  # vertical
+            dX = 0
+            dY = dist
+        else:
+            dX = cos(atan(cu['a'])) * dist
+            dY = cu['a'] * dX
+        # +/- direction
+        tmp = 1 if cu['end'][1] > cu['start'][1] else -1
+        xDirection = 1 if cu['end'][0] > cu['start'][0] else -1
+        yDirection = tmp if cu['a'] >= 0 else tmp * -1
+        x = cu['start'][0] + xDirection * dX
+        y = cu['start'][1] + yDirection * dY
+
+        return [x, y]
+ 
+    def getRasterProfile(self, pLines, layer, band, fullRes):
         x = []
         y = []
         self.initSamplingPoints()
-        pixelSize = layer.rasterUnitsPerPixelX()
         dp = layer.dataProvider()
         band = int(band.replace('Band ', ''))
+        pixelSize = layer.rasterUnitsPerPixelX() if fullRes else 1
         cP = 0  # index number of current segment
         tmpD = 0  # current distance within current segment
         totalD = self.sumD(pLines)  # total distance of profile line
@@ -112,22 +140,24 @@ class DataProcessingTool():
                 dX *= pixelSize
                 dY *= pixelSize
 
-            res = dp.identify(QgsPoint(tmpX, tmpY),
-                              QgsRaster.IdentifyFormatValue).results()
-            y.append(res[band])
+            qgsPoint = QgsPoint(tmpX, tmpY)
+            y.append(self.getPointValue(dp, qgsPoint, band))
             x.append(tmpD)
-            self.samplingPoints.append(QgsPoint(tmpX, tmpY))
+            self.samplingPoints.append(qgsPoint)
             tmpX += dX
             tmpY += dY
             tmpD += pixelSize
         else:
             endPoint = pLines[len(pLines) - 1]['end']
-            res = dp.identify(QgsPoint(endPoint[0], endPoint[1]),
-                              QgsRaster.IdentifyFormatValue).results()
-            y.append(res[band])
+            qgsPoint = QgsPoint(tmpX, tmpY)
+            y.append(self.getPointValue(dp, qgsPoint, band))
             x.append(totalD)
-            self.samplingPoints.append(QgsPoint(endPoint[0], endPoint[1]))
+            self.samplingPoints.append(qgsPoint)
         return [x, y]
+
+    def getPointValue(self, dp, point, band):
+        res = dp.identify(point, QgsRaster.IdentifyFormatValue).results()
+        return res[band] if res[band] is not None else 0
 
     def getProjectedPoint(self, pLines, pt, distLimit):
         minDist = 1E+12
@@ -139,6 +169,8 @@ class DataProcessingTool():
         for index, pLine in enumerate(pLines):
             slope = pLine['a']
             intercept = pLine['b']
+                
+
             if slope == 0:
                 pass
             a, b = self.calcNormalLine(pt, slope, intercept)
@@ -149,6 +181,9 @@ class DataProcessingTool():
             elif a == 0:
                 # normal line = horizontal
                 tmpx = pLine['end'][0]
+                tmpy = pt[1]
+            elif pt[1] == slope * pt[0] + intercept:
+                tmpx = pt[0]
                 tmpy = pt[1]
             else:
                 tmpx = (b - intercept) / (slope - a)
@@ -266,6 +301,7 @@ class DataProcessingTool():
 
     def initTieLines(self):
         self.tieLine = []
+        self.tieLineFlag = {}
 
     def initSamplingPoints(self):
         self.samplingPoints = []

@@ -21,25 +21,27 @@
  ***************************************************************************/
 """
 from PyQt4.QtCore import QObject, SIGNAL, QSettings, QTranslator, qVersion, \
-                         QCoreApplication, QVariant
+                         QCoreApplication, QVariant, Qt, QTimer
 
-from PyQt4.QtGui import QAction, QIcon, QFileDialog, QColorDialog
+from PyQt4.QtGui import QAction, QIcon, QFileDialog, QColorDialog, \
+                        QStandardItemModel, QMessageBox
 
 from qgis.core import QgsVectorLayer, QgsField, QgsFeature, QgsGeometry, \
                       QgsPoint, QgsVectorFileWriter
 
 # Initialize Qt resources from file resources.py
 import resources_rc
-import os
+import os, time
 
 # Import the code for the DockWidget and ploting
 from tools.plottingTool import PlottingTool
 from tools.profileLineTool import ProfileLineTool
 from tools.dataProcessingTool import DataProcessingTool
+from tools.myTableViewModel import MyTableViewModel
 from ui.dockWidget import DockWidget
 from ui.lpExportDialog import LPExportDialog
 from ui.lpImportDialog import LPImportDialog
-
+from ui.lpConfigPlotDialog import LPConfigPlotDialog
 
 class LineProfile:
 
@@ -92,7 +94,12 @@ class LineProfile:
         self.plotTool = None
         self.dpTool = None
 
-        self.debugFlag = False
+        self.closingFlag = False
+        self.debugFlag = False 
+
+        self.model = MyTableViewModel()
+
+        self.timer = QTimer()
 
     # noinspection PyMethodMayBeStatic
     def tr(self, message):
@@ -185,19 +192,22 @@ class LineProfile:
     def initGui(self):
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
 
-        icon_path = ':/plugins/LineProfile/icon.png'
+        icon_path = ':/plugins/LineProfile/img/icon.png'
         self.action = self.add_action(
             icon_path,
             text=self.tr(u'Line profile'),
             callback=self.run,
             whats_this=self.tr(u'Plot Line Profiles'),
             parent=self.iface.mainWindow())
+        self.action.setCheckable(True)
 
         self.profLineTool = ProfileLineTool(self.canvas, self.action)
-        self.plotTool = PlottingTool()
+        self.plotTool = PlottingTool(self.model, self.drawTracer)
         self.dpTool = DataProcessingTool()
 
+
     def unload(self):
+        print 'unloading'
         """Removes the plugin menu item and icon from QGIS GUI."""
         for action in self.actions:
             self.iface.removePluginMenu(
@@ -207,91 +217,131 @@ class LineProfile:
 
     def run(self):
         """Run method that performs all the real work"""
-
-        if self.dockOpened is False:
-            self.dock = DockWidget(self.iface.mainWindow(), self.iface)
+        self.action.setChecked(True)
+        if not self.dock:
+            self.dock = DockWidget(self.iface.mainWindow(), 
+                                   self.iface, self.model)
             self.dock.showDockWidget()
             self.plotTool.addPlotWidget(self.dock.myFrame)
             self.dockOpened = True
-        QObject.connect(
-            self.canvas, SIGNAL('layersChanged()'), self.refreshDock)
-        self.connectDock()
-        self.connectTools()
-        self.canvas.setMapTool(self.profLineTool)
+        self.initMapTool()
+        self.myConnect()
 
+    def adjustTableColumnWidth(self):
+        self.timer.stop()
+        try:
+            w = 68 if self.dock.myTable.verticalScrollBar().isVisible() else 85
+            self.dock.myTable.setColumnWidth(self.model.getColumnIndex('layer'), w)
+        except:
+            pass
 
-###############################################################################
-    def deactivatePlugin(self):
-        QObject.disconnect(
-            self.canvas, SIGNAL('layersChanged()'), self.refreshDock)
-        self.canvas.unsetMapTool(self.profLineTool)
-        self.canvas.setMapTool(self.originalMapTool)
-        self.disconnectDock()
+    def initMapTool(self):
+        if self.action.isChecked():
+            self.profLineTool = ProfileLineTool(self.canvas, self.action)
+            self.connectTools()
+            self.canvas.setMapTool(self.profLineTool)
+            QObject.connect(self.canvas, SIGNAL("mapToolSet(QgsMapTool *)"),
+                            self.mapToolChanged)
+            QObject.connect(self.canvas, 
+                            SIGNAL('mapCanvasRefreshed()'), self.refreshModel)
+            self.connectDock()
+        else:
+            self.mapToolChanged()
+
+    def mapToolChanged(self, tool):
+        if tool is self.profLineTool:
+            return
+        self.profLineTool.resetProfileLine()
+        self.action.setChecked(False)
         self.disconnectTools()
+        QObject.disconnect(self.canvas, SIGNAL("mapToolSet(QgsMapTool *)"),
+                           self.mapToolChanged)
+        QObject.disconnect(self.canvas, 
+                           SIGNAL('mapCanvasRefreshed()'), self.refreshModel)
+        self.canvas.unsetMapTool(self.profLineTool)
+        self.disconnectDock()
 
     def closePlugin(self):
-        self.deactivatePlugin()
-        self.dockOpened = False
+        self.mapToolChanged(self.originalMapTool)
+        self.dock = None
+
+    def deactivatePlugin(self):
+        print 'deactivated'
 
     def connectDock(self):
-        QObject.connect(
-            self.dock, SIGNAL("closed(PyQt_PyObject)"), self.closePlugin)
-        QObject.connect(self.dock.myExportProfileLineBtn, SIGNAL(
-            "clicked(bool)"), self.openExportProfileLineDialog)
-        QObject.connect(self.dock.Btn_ImportProfileLine, SIGNAL(
-            "clicked(bool)"), self.openImportProfileLineDialog)
-        QObject.connect(
-            self.dock.Btn_ExportPlot, SIGNAL("clicked(bool)"), self.exportPlot)
-        QObject.connect(self.dock.Btn_ChangePlotColor, SIGNAL(
-            "clicked(bool)"), self.changePlotColor)
-        QObject.connect(
-            self.dock.ChkBox_TieLine, SIGNAL("stateChanged(int)"),
-            self.updatePlot)
-        QObject.connect(
-            self.dock.Grp_SecondaryY, SIGNAL('clicked()'), self.updatePlot)
-        QObject.connect(self.dock.SpnBox_DistanceLimit, SIGNAL(
-            'valueChanged(double)'), self.updatePlot)
-        QObject.connect(self.dock, SIGNAL('cmboxupdated'), self.updatePlot)
+        QObject.connect(self.dock, SIGNAL("closed(PyQt_PyObject)"), 
+                        self.closePlugin)
+        QObject.connect(self.dock.myExportProfileLineBtn,
+                        SIGNAL("clicked()"), self.openExportProfileLineDialog)
+        QObject.connect(self.dock.Btn_ImportProfileLine, 
+                        SIGNAL("clicked()"), self.openImportProfileLineDialog)
+        QObject.connect(self.dock.Btn_ExportPlot, 
+                        SIGNAL("clicked()"), self.exportPlot)
+        QObject.connect(self.dock.ChkBox_TieLine, 
+                        SIGNAL("stateChanged(int)"), self.updatePlot)
+        QObject.connect(self.dock, SIGNAL('showConfig'), self.showConfigDialog)
+        QObject.connect(self.dock, SIGNAL('resized'), self.updatePlot)
 
-    def connectTools(self):
-        QObject.connect(
-            self.profLineTool, SIGNAL('proflineterminated'), self.updatePlot)
-        QObject.connect(
-            self.profLineTool, SIGNAL('doubleClicked'), self.resetPlot)
-        QObject.connect(
-            self.profLineTool, SIGNAL('deactivate'), self.deactivatePlugin)
+        # model
+        QObject.connect(self.model, SIGNAL('itemChanged(QStandardItem*)'),
+                        self.myConnect)
+        QObject.connect(self.model, SIGNAL('rowsInserted(QModelIndex,int,int)'),
+                        self.myConnect)
+        QObject.connect(self.model, SIGNAL('rowsRemoved(QModelIndex,int,int)'),
+                        self.myConnect)
+        QObject.connect(self.timer, SIGNAL('timeout()'),
+                        self.adjustTableColumnWidth)
+
+    def myConnect(self):
+        self.timer.start(50)
+        self.updatePlot()
+        try:
+            w = 74 if self.dock.myTable.verticalScrollBar().isVisible() else 91
+            self.dock.myTable.setColumnWidth(self.model.getColumnIndex('layer'), w)
+        except:
+            pass
 
     def disconnectDock(self):
-        QObject.disconnect(self.dock.myExportProfileLineBtn,
-                           SIGNAL("clicked(bool)"),
-                           self.openExportProfileLineDialog)
-        QObject.disconnect(self.dock.Btn_ImportProfileLine,
-                           SIGNAL("clicked(bool)"),
-                           self.openImportProfileLineDialog)
-        QObject.disconnect(self.dock.Btn_ExportPlot,
-                           SIGNAL("clicked(bool)"), self.exportPlot)
-        QObject.disconnect(self.dock.Btn_ChangePlotColor,
-                           SIGNAL("clicked(bool)"), self.changePlotColor)
-        QObject.disconnect(
-            self.dock.ChkBox_TieLine, SIGNAL("stateChanged(int)"),
-            self.updatePlot)
-        QObject.disconnect(
-            self.dock.Grp_SecondaryY, SIGNAL('clicked()'), self.updatePlot)
-        QObject.disconnect(self.dock.SpnBox_DistanceLimit, SIGNAL(
-            'valueChanged(double)'), self.updatePlot)
-        QObject.disconnect(self.dock, SIGNAL('cmboxupdated'), self.updatePlot)
+        try:
+            QObject.disconnect(self.dock.Btn_ImportProfileLine,
+                               SIGNAL("clicked(bool)"),
+                               self.openImportProfileLineDialog)
+            QObject.disconnect(self.dock.Btn_ExportPlot,
+                               SIGNAL("clicked(bool)"), self.exportPlot)
+            QObject.disconnect(self.dock.ChkBox_TieLine,
+                               SIGNAL("stateChanged(int)"), self.updatePlot)
+            QObject.disconnect(self.dock.myExportProfileLineBtn,
+                               SIGNAL("clicked(bool)"),
+                               self.openExportProfileLineDialog)
+            self.dock.resizeEvent = None 
+            QObject.disconnect(self.model,
+                               SIGNAL('itemChanged(QStandardItem*)'),
+                               self.myConnect)
+            QObject.disconnect(self.model,
+                               SIGNAL('rowsInserted(QModelIndex,int,int)'),
+                               self.myConnect)
+            QObject.disconnect(self.model,
+                               SIGNAL('rowsRemoved(QModelIndex,int,int)'),
+                               self.myConnect)
+            QObject.disconnect(self.timer, SIGNAL('timeout()'),
+                               self.adjustTableColumnWidth)
+        except:
+            pass
+
+    def connectTools(self):
+        QObject.connect(self.profLineTool,
+                        SIGNAL('proflineterminated'), self.updatePlot)
+        QObject.connect(self.profLineTool,
+                        SIGNAL('doubleClicked'), self.resetPlot)
+
+    def signalChecker(self):
+        print 'maptool.deactivated'
 
     def disconnectTools(self):
         QObject.disconnect(self.profLineTool,
                            SIGNAL('proflineterminated'), self.updatePlot)
         QObject.disconnect(self.profLineTool,
-                           SIGNAL('doubleClicked'), self.changePlotColor)
-        QObject.disconnect(self.profLineTool,
-                           SIGNAL('proflineterminated'), self.updatePlot)
-
-    def changePlotColor(self):
-        qd = QColorDialog()
-        qd.open()
+                           SIGNAL('doubleClicked'), self.resetPlot)
 
     def exportPlot(self):
         fileName = QFileDialog.getSaveFileName(self.iface.mainWindow(),
@@ -301,12 +351,48 @@ class LineProfile:
                                                Portable Document Format (.pdf);;\
                                                Scalable Vector Graphics (.svg)")
         if fileName:
+            self.updatePlot()
             self.plotTool.savePlot(fileName)
 
-    def refreshDock(self):
-        self.dock.updateLayerFieldComboBox()
+    def showConfigDialog(self, index):
+        self.configPlotDialog = LPConfigPlotDialog(self.iface, self.model, index)
+        self.configPlotDialog.show()
+
+    def refreshModel(self):
+        legend = self.iface.legendInterface()
+        layers = legend.layers()
+        layerIds = [l.id() for l in layers]
+        removeRows = []
+        visRows = {}
+        for r in xrange(self.model.rowCount()):
+            lid = self.model.getLayerId(r)
+            # exist vs. not exist
+            if lid not in layerIds:
+                removeRows.append(r)
+            else:
+                # visible vs. not visible
+                state = legend.isLayerVisible(layers[layerIds.index(lid)])
+                mState = True if self.model.getCheckState(r) else False
+                if state is not mState: # not
+                    visRows[r] = int(state) * 2
+                    # self.model.setCheckState(r, int(state) * 2)
+        removeRows.reverse()
+        self.model.updateFlag = False
+        [self.model.removeRows(r, 1) for r in removeRows]
+        [self.model.setCheckState(r, s) for r, s in visRows.iteritems()]
+        self.model.updateFlag = True
+        if removeRows or visRows:
+            self.updatePlot()
 
     def updatePlot(self):
+        if not self.model.updateFlag:
+            return
+        if self.canvas.layerCount() == 0 or self.model.rowCount() == 0:
+            self.plotTool.resetPlot()
+            self.profLineTool.resetProfileLine()
+            return
+        print 'Updating plot'
+        start = time.clock()
         self.pLines = self.dpTool.getProfileLines(
             self.profLineTool.getProfPoints())
         if len(self.pLines) == 0:
@@ -318,53 +404,33 @@ class LineProfile:
         # initialize sampling points on raster layer for debugging
         self.dpTool.initSamplingPoints()
 
-        layer1 = self.getLayerById(self.dock.currentPLayer)
-        # layer1 = self.canvas.layer(self.dock.myLayers.currentIndex())
-        field1 = self.dock.myFields.currentText()
-        if not field1:
-            return False
+        data = []
 
-        distLimit = self.dock.SpnBox_DistanceLimit.value()
-
-        if layer1.type() == 0:  # vector
-            data1 = self.dpTool.getVectorProfile(
-                self.pLines, layer1, field1, distLimit)
-        else:
-            data1 = self.dpTool.getRasterProfile(self.pLines, layer1, field1)
-
-        # secondary-Y axis
-        if self.dock.Grp_SecondaryY.isChecked():
-            layer2 = self.getLayerById(self.dock.currentSLayer)
-            field2 = self.dock.mySecondFields.currentText()
-            if layer2.type() == 0:  # vector
-                data2 = self.dpTool.getVectorProfile(
-                    self.pLines, layer2, field2, distLimit)
-            else:
-                data2 = self.dpTool.getRasterProfile(
-                    self.pLines, layer2, field2)
-        else:
-            layer2 = None
-            field2 = None
-            data2 = None
-
+        # distLimit = self.dock.SpnBox_DistanceLimit.value()
+        for r in xrange(self.model.rowCount()):
+            layer = self.getLayerById(self.model.getLayerId(r))
+            if not layer or not self.model.getCheckState(r):
+                continue
+            field = self.model.getDataName(r)
+            config = self.model.getConfigs(r) 
+            if layer.type() == layer.VectorLayer:
+                data.append(self.dpTool.getVectorProfile(self.pLines,
+                            layer, field, config['maxDistance']))
+            elif layer.type() == layer.RasterLayer:
+                data.append(self.dpTool.getRasterProfile(self.pLines,
+                            layer, field, config['fullRes']))
         # draw tie lines
         if self.dock.ChkBox_TieLine.isChecked():
             for pt in self.dpTool.getTieLines():
                 self.profLineTool.drawTieLine(pt[0], pt[1])
-
             # draw sampling points on raster layer for debugging
             if self.debugFlag is True:
                 for pt in self.dpTool.getSamplingPoints():
                     self.profLineTool.addVertex2(pt)
-
         # draw line profile
-        self.plotTool.drawPlot(self.pLines,
-                               data1, data2,
-                               label1=field1,
-                               label2=field2)
-
+        self.plotTool.drawPlot3(self.pLines, data)
+ 
     def resetPlot(self):
-        # self.plotWdg.figure.clear()
         self.plotTool.resetPlot()
 
     def openExportProfileLineDialog(self):
@@ -390,7 +456,7 @@ class LineProfile:
         points = self.profLineTool.getProfPoints()
 
         # add fields
-        for i in range(0, len(points)):
+        for i in xrange(len(points)):
             fields.append(QgsField('Point-{0}'.format(i + 1), QVariant.String))
         fields.append(QgsField('Max Dist.', QVariant.Double))
         dataProvider.addAttributes(fields)
@@ -400,7 +466,7 @@ class LineProfile:
             polyline.append(QgsPoint(pt[0], pt[1]))
             attr.append('{0}, {1}'.format(pt[0], pt[1]))
             # attr.append(pt[1])
-        attr.append(self.dock.SpnBox_DistanceLimit.value())
+        # attr.append(self.dock.SpnBox_DistanceLimit.value())
 
         # add a feature
         feture = QgsFeature()
@@ -473,20 +539,29 @@ class LineProfile:
         dp = layer.dataProvider()
         for f in dp.getFeatures():
             points = f.geometry().asPolyline()
-            try:
-                maxD = f.attribute('Max Dist.')
-            except:
-                maxD = self.dock.SpnBox_DistanceLimit.value()
+            # try:
+            #     maxD = f.attribute('Max Dist.')
+            # except:
+            #     maxD = self.dock.SpnBox_DistanceLimit.value()
 
         self.profLineTool.drawProfileLineFromPoints(points)
-        self.dock.SpnBox_DistanceLimit.setValue(maxD)
+        # self.dock.SpnBox_DistanceLimit.setValue(maxD)
         self.updatePlot()
 
+    def drawTracer(self, event):
+        self.profLineTool.resetRasterPoints()
+        if not self.dock.ChkBox_Tracer.isChecked() \
+            or event.xdata is None \
+            or event.ydata is None:
+            return
+        x = event.xdata
+        y = event.ydata
+        pt = self.dpTool.getCurrentCoordinates(self.pLines, x)
+        self.profLineTool.addVertex2(pt)
+
     def getLayerById(self, lid):
-        for layer in self.canvas.layers():
-            if lid == layer.id():
-                return layer
-        return False
+        l = [layer for layer in self.canvas.layers() if lid == layer.id()]
+        return l[0] if len(l) is 1 else False
 
     def sanitizePath(self, path):
         path = os.path.expanduser(path)
