@@ -326,9 +326,11 @@ class LineProfile:
 
         distLimit = self.dock.SpnBox_DistanceLimit.value()
 
+        ditanceColName = "LPDistance"
+
         if layer1.type() == 0:  # vector
             data1 = self.dpTool.getVectorProfile(
-                self.pLines, layer1, field1, distLimit)
+                self.pLines, layer1, field1, distLimit, ditanceColName)
         else:
             data1 = self.dpTool.getRasterProfile(self.pLines, layer1, field1)
 
@@ -338,7 +340,7 @@ class LineProfile:
             field2 = self.dock.mySecondFields.currentText()
             if layer2.type() == 0:  # vector
                 data2 = self.dpTool.getVectorProfile(
-                    self.pLines, layer2, field2, distLimit)
+                    self.pLines, layer2, field2, distLimit, ditanceColName)
             else:
                 data2 = self.dpTool.getRasterProfile(
                     self.pLines, layer2, field2)

@@ -30,6 +30,10 @@ class DataProcessingTool():
         x = []
         y = []
         d = 0
+
+        if layer.dataProvider().fieldNameIndex(distanceField) == -1:
+            distanceField = None
+
         if layer.selectedFeatureCount() > 0:
             featuresForPlot = layer.selectedFeatures()
         else:
@@ -39,8 +43,13 @@ class DataProcessingTool():
             layer.startEditing()
 
         for f in featuresForPlot:
-            # calc coordinate of intercept between normal line and profile line
 
+            # initializing distance column (filled by NULL)
+            if distanceField:
+                f[distanceField] = QPyNullVariant(int)
+
+            # calc coordinate of intercept between normal line and profile line
+            
             if type(f.attribute(field)) is type(QPyNullVariant(int)):
                 continue
 
@@ -55,7 +64,7 @@ class DataProcessingTool():
                 self.addTieLine(pt, prjProint[:2])
                 if distanceField:
                     f[distanceField] = d
-                    layer.updateFeature(f)
+            layer.updateFeature(f)
 
         if distanceField:
             layer.commitChanges()
