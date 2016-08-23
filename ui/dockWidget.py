@@ -73,7 +73,7 @@ class DockWidget(QDockWidget, FORM_CLASS):
         [self.myTable.setColumnWidth(self.model.getColumnIndex(c), v['width'])
             for c, v in columnSettings.iteritems()]
         self.myTable.horizontalHeader().setStretchLastSection(True)
-        # self.autoAdd()
+        self.autoAdd()
         self.model.updateFlag = True
 
     def autoAdd(self):

@@ -31,7 +31,7 @@ from qgis.core import QgsVectorLayer, QgsField, QgsFeature, QgsGeometry, \
 
 # Initialize Qt resources from file resources.py
 import resources_rc
-import os, time
+import os, time, re
 
 # Import the code for the DockWidget and ploting
 from tools.plottingTool import PlottingTool
@@ -236,7 +236,8 @@ class LineProfile:
             pass
 
     def initMapTool(self):
-        if self.action.isChecked():
+        curTool = self.canvas.mapTool()
+        if re.search(r'ProfileLineTool', str(curTool)) is None:
             self.profLineTool = ProfileLineTool(self.canvas, self.action)
             self.connectTools()
             self.canvas.setMapTool(self.profLineTool)
@@ -246,7 +247,7 @@ class LineProfile:
                             SIGNAL('mapCanvasRefreshed()'), self.refreshModel)
             self.connectDock()
         else:
-            self.mapToolChanged()
+            self.mapToolChanged(curTool)
 
     def mapToolChanged(self, tool):
         if tool is self.profLineTool:
@@ -269,6 +270,7 @@ class LineProfile:
         print 'deactivated'
 
     def connectDock(self):
+        self.disconnectDock()
         QObject.connect(self.dock, SIGNAL("closed(PyQt_PyObject)"), 
                         self.closePlugin)
         QObject.connect(self.dock.myExportProfileLineBtn,
@@ -346,10 +348,11 @@ class LineProfile:
     def exportPlot(self):
         fileName = QFileDialog.getSaveFileName(self.iface.mainWindow(),
                                                "Save As",
-                                               "~/",
-                                               "Images (.png, .jpg);;\
-                                               Portable Document Format (.pdf);;\
-                                               Scalable Vector Graphics (.svg)")
+                                               os.environ['HOME'],
+                                               "Portable Document Format (*.pdf);;\
+                                               Image - PNG file (*.png);;\
+                                               Image - JPEG file (*.jpg);;\
+                                               Scalable Vector Graphics (*.svg)")
         if fileName:
             self.updatePlot()
             self.plotTool.savePlot(fileName)
@@ -391,7 +394,6 @@ class LineProfile:
             self.plotTool.resetPlot()
             self.profLineTool.resetProfileLine()
             return
-        print 'Updating plot'
         start = time.clock()
         self.pLines = self.dpTool.getProfileLines(
             self.profLineTool.getProfPoints())

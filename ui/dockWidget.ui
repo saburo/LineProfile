@@ -289,7 +289,7 @@
                 <enum>Qt::NoFocus</enum>
                </property>
                <property name="text">
-                <string>Tracer</string>
+                <string>Marker</string>
                </property>
                <property name="checked">
                 <bool>false</bool>

@@ -2,5 +2,6 @@
     <qresource prefix="/plugins/LineProfile" >
         <file>img/icon.png</file>
         <file>img/cog.png</file>
+        <file>img/alg.png</file>
     </qresource>
 </RCC>

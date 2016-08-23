@@ -33,7 +33,7 @@ class MyTableViewModel(QStandardItemModel):
     """""""""""""""""""""""""""""""""""""""
     def addElement(self, layer, element):
         myColor = self.getAvailableColor()
-        iconPath = ':/plugins/LineProfile/img/cog.png'
+        iconPath = ':/plugins/LineProfile/img/alg.png'
         newRow = [QStandardItem() for n in xrange(self.n)]
 
         newRow[self.c['state']].setCheckable(True)
