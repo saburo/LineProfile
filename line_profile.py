@@ -101,6 +101,8 @@ class LineProfile:
 
         self.timer = QTimer()
 
+        # self.data = [] # for plot data
+
     # noinspection PyMethodMayBeStatic
     def tr(self, message):
         """Get the translation for a string using Qt translation API.
@@ -281,6 +283,14 @@ class LineProfile:
                         SIGNAL("clicked()"), self.exportPlot)
         QObject.connect(self.dock.ChkBox_TieLine, 
                         SIGNAL("stateChanged(int)"), self.updatePlot)
+        QObject.connect(self.dock.ChkBox_SamplingRange, 
+                        SIGNAL("stateChanged(int)"), self.updatePlot)
+        QObject.connect(self.dock.ChkBox_Debug,
+                        SIGNAL("stateChanged(int)"), self.updatePlot)
+        QObject.connect(self.dock.SpinBox_SamplingWidth,
+                        SIGNAL("valueChanged(int)"), self.updatePlot)
+        QObject.connect(self.dock.Btn_ExportProfileData,
+                        SIGNAL("clicked()"), self.exportProfileData)
         QObject.connect(self.dock, SIGNAL('showConfig'), self.showConfigDialog)
         QObject.connect(self.dock, SIGNAL('resized'), self.updatePlot)
 
@@ -312,6 +322,14 @@ class LineProfile:
                                SIGNAL("clicked(bool)"), self.exportPlot)
             QObject.disconnect(self.dock.ChkBox_TieLine,
                                SIGNAL("stateChanged(int)"), self.updatePlot)
+            QObject.disconnect(self.dock.ChkBox_SamplingRange,
+                               SIGNAL("stateChanged(int)"), self.updatePlot)
+            QObject.disconnect(self.dock.ChkBox_Debug,
+                               SIGNAL("stateChanged(int)"), self.updatePlot)
+            QObject.disconnect(self.dock.SpinBox_SamplingWidth,
+                               SIGNAL("valueChanged(int)"), self.updatePlot)
+            QObject.disconnect(self.dock.Btn_ExportProfileData,
+                               SIGNAL("clicked()"), self.exportProfileData)
             QObject.disconnect(self.dock.myExportProfileLineBtn,
                                SIGNAL("clicked(bool)"),
                                self.openExportProfileLineDialog)
@@ -403,10 +421,11 @@ class LineProfile:
         # initialize tie lines
         self.dpTool.initTieLines()
         self.profLineTool.resetTieLies()
+        self.profLineTool.resetSamplingRange()
         # initialize sampling points on raster layer for debugging
         self.dpTool.initSamplingPoints()
 
-        data = []
+        self.data = []
 
         # distLimit = self.dock.SpnBox_DistanceLimit.value()
         for r in xrange(self.model.rowCount()):
@@ -416,11 +435,12 @@ class LineProfile:
             field = self.model.getDataName(r)
             config = self.model.getConfigs(r) 
             if layer.type() == layer.VectorLayer:
-                data.append(self.dpTool.getVectorProfile(self.pLines,
+                self.data.append(self.dpTool.getVectorProfile(self.pLines,
                             layer, field, config['maxDistance']))
             elif layer.type() == layer.RasterLayer:
-                data.append(self.dpTool.getRasterProfile(self.pLines,
-                            layer, field, config['fullRes']))
+                self.data.append(self.dpTool.getRasterProfile(self.pLines,
+                            layer, field, config['fullRes'], 
+                            int(self.dock.ChkBox_SamplingRange.isChecked()) * self.dock.SpinBox_SamplingWidth.value()))
         # draw tie lines
         if self.dock.ChkBox_TieLine.isChecked():
             for pt in self.dpTool.getTieLines():
@@ -429,9 +449,25 @@ class LineProfile:
             if self.debugFlag is True:
                 for pt in self.dpTool.getSamplingPoints():
                     self.profLineTool.addVertex2(pt)
+
+        # # sampling range 
+        # if self.dock.ChkBox_SamplingRange.isChecked():
+        #     self.profLineTool.drawSamplingLine(self.dpTool.getSamplingWidth())
+
+        # dots/lines
+        if self.dock.ChkBox_SamplingRange.isChecked() and self.dock.ChkBox_Debug.isChecked():
+            self.profLineTool.resetSamplingRange()
+            for pt in self.dpTool.getSamplingRange():
+                self.profLineTool.addSamplingRange2(pt, False)
+
+
         # draw line profile
-        self.plotTool.drawPlot3(self.pLines, data)
- 
+        dList = [r for r in range(self.model.rowCount()) 
+                    if self.model.getCheckState(r) == Qt.Checked]
+        print dList
+        self.expData = [d for d in self.data]
+        self.plotTool.drawPlot3(self.pLines, self.data)
+
     def resetPlot(self):
         self.plotTool.resetPlot()
 
@@ -560,6 +596,22 @@ class LineProfile:
         y = event.ydata
         pt = self.dpTool.getCurrentCoordinates(self.pLines, x)
         self.profLineTool.addVertex2(pt)
+
+
+    def exportProfileData(self):
+        fileName = QFileDialog.getSaveFileName(self.iface.mainWindow(),
+                                               "Save As",
+                                               os.environ['HOME'],
+                                               "text file (*.txt)")
+        if fileName:
+            print fileName
+            print self.pLines
+            print self.expData
+            # for i in self.expData:
+
+            # f = open(filenName, 'w')
+
+             
 
     def getLayerById(self, lid):
         l = [layer for layer in self.canvas.layers() if lid == layer.id()]

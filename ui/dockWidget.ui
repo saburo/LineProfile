@@ -75,81 +75,95 @@
        <attribute name="title">
         <string>Plot</string>
        </attribute>
-       <layout class="QHBoxLayout" name="horizontalLayout">
-        <item>
-         <widget class="QFrame" name="myFrame">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
-            <horstretch>30</horstretch>
-            <verstretch>30</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="minimumSize">
-           <size>
-            <width>468</width>
-            <height>196</height>
-           </size>
-          </property>
-          <property name="font">
-           <font>
-            <pointsize>10</pointsize>
-           </font>
-          </property>
-          <property name="cursor">
-           <cursorShape>CrossCursor</cursorShape>
-          </property>
-          <property name="styleSheet">
-           <string notr="true"/>
-          </property>
-          <property name="frameShadow">
-           <enum>QFrame::Raised</enum>
-          </property>
-          <property name="lineWidth">
-           <number>0</number>
-          </property>
-          <layout class="QVBoxLayout" name="verticalLayout">
-           <property name="spacing">
-            <number>0</number>
-           </property>
-           <property name="sizeConstraint">
-            <enum>QLayout::SetMaximumSize</enum>
-           </property>
-           <property name="leftMargin">
-            <number>0</number>
-           </property>
-           <property name="topMargin">
-            <number>0</number>
-           </property>
-           <property name="rightMargin">
-            <number>0</number>
-           </property>
-           <property name="bottomMargin">
-            <number>0</number>
-           </property>
-          </layout>
-         </widget>
-        </item>
-        <item>
-         <widget class="QFrame" name="verticalFrame">
-          <property name="minimumSize">
-           <size>
-            <width>200</width>
-            <height>204</height>
-           </size>
-          </property>
-          <property name="maximumSize">
-           <size>
-            <width>258</width>
-            <height>16777215</height>
-           </size>
-          </property>
-          <layout class="QVBoxLayout" name="verticalLayout_3">
+       <widget class="QFrame" name="myFrame">
+        <property name="geometry">
+         <rect>
+          <x>20</x>
+          <y>12</y>
+          <width>681</width>
+          <height>196</height>
+         </rect>
+        </property>
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+          <horstretch>30</horstretch>
+          <verstretch>30</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>418</width>
+          <height>196</height>
+         </size>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>10</pointsize>
+         </font>
+        </property>
+        <property name="cursor">
+         <cursorShape>CrossCursor</cursorShape>
+        </property>
+        <property name="styleSheet">
+         <string notr="true"/>
+        </property>
+        <property name="frameShadow">
+         <enum>QFrame::Raised</enum>
+        </property>
+        <property name="lineWidth">
+         <number>0</number>
+        </property>
+        <layout class="QVBoxLayout" name="verticalLayout">
+         <property name="spacing">
+          <number>0</number>
+         </property>
+         <property name="sizeConstraint">
+          <enum>QLayout::SetMaximumSize</enum>
+         </property>
+         <property name="leftMargin">
+          <number>0</number>
+         </property>
+         <property name="topMargin">
+          <number>0</number>
+         </property>
+         <property name="rightMargin">
+          <number>0</number>
+         </property>
+         <property name="bottomMargin">
+          <number>0</number>
+         </property>
+        </layout>
+       </widget>
+       <widget class="QFrame" name="verticalFrame">
+        <property name="geometry">
+         <rect>
+          <x>710</x>
+          <y>12</y>
+          <width>290</width>
+          <height>204</height>
+         </rect>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>290</width>
+          <height>204</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>258</width>
+          <height>16777215</height>
+         </size>
+        </property>
+        <layout class="QGridLayout" name="gridLayout">
+         <item row="0" column="0" rowspan="2">
+          <layout class="QVBoxLayout" name="verticalLayout_2">
            <item>
             <widget class="QTableView" name="myTable">
              <property name="minimumSize">
               <size>
                <width>219</width>
-               <height>110</height>
+               <height>96</height>
               </size>
              </property>
              <property name="font">
@@ -190,27 +204,11 @@
             </widget>
            </item>
            <item>
-            <layout class="QHBoxLayout" name="horizontalLayout_5">
-             <item>
-              <widget class="QPushButton" name="Btn_Add">
-               <property name="minimumSize">
-                <size>
-                 <width>90</width>
-                 <height>32</height>
-                </size>
-               </property>
-               <property name="maximumSize">
-                <size>
-                 <width>16777215</width>
-                 <height>32</height>
-                </size>
-               </property>
-               <property name="text">
-                <string>Add Data</string>
-               </property>
-              </widget>
-             </item>
-             <item>
+            <layout class="QGridLayout" name="gridLayout_2">
+             <property name="sizeConstraint">
+              <enum>QLayout::SetMaximumSize</enum>
+             </property>
+             <item row="0" column="1">
               <widget class="QPushButton" name="Btn_ExportPlot">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
@@ -221,22 +219,26 @@
                <property name="minimumSize">
                 <size>
                  <width>90</width>
-                 <height>32</height>
+                 <height>28</height>
                 </size>
+               </property>
+               <property name="maximumSize">
+                <size>
+                 <width>16777215</width>
+                 <height>28</height>
+                </size>
+               </property>
+               <property name="font">
+                <font>
+                 <pointsize>10</pointsize>
+                </font>
                </property>
                <property name="text">
                 <string>Save Plot</string>
                </property>
               </widget>
              </item>
-            </layout>
-           </item>
-           <item>
-            <layout class="QHBoxLayout" name="horizontalLayout_3">
-             <property name="topMargin">
-              <number>0</number>
-             </property>
-             <item>
+             <item row="1" column="0">
               <widget class="QCheckBox" name="ChkBox_TieLine">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="Minimum" vsizetype="Maximum">
@@ -252,7 +254,7 @@
                </property>
                <property name="font">
                 <font>
-                 <pointsize>10</pointsize>
+                 <pointsize>9</pointsize>
                 </font>
                </property>
                <property name="focusPolicy">
@@ -266,13 +268,31 @@
                </property>
               </widget>
              </item>
-             <item>
+             <item row="2" column="0">
+              <widget class="QCheckBox" name="ChkBox_SamplingRange">
+               <property name="font">
+                <font>
+                 <pointsize>9</pointsize>
+                </font>
+               </property>
+               <property name="text">
+                <string>Area Sampling</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="1">
               <widget class="QCheckBox" name="ChkBox_Tracer">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="Minimum" vsizetype="Maximum">
                  <horstretch>0</horstretch>
                  <verstretch>0</verstretch>
                 </sizepolicy>
+               </property>
+               <property name="minimumSize">
+                <size>
+                 <width>0</width>
+                 <height>0</height>
+                </size>
                </property>
                <property name="maximumSize">
                 <size>
@@ -282,7 +302,7 @@
                </property>
                <property name="font">
                 <font>
-                 <pointsize>10</pointsize>
+                 <pointsize>9</pointsize>
                 </font>
                </property>
                <property name="focusPolicy">
@@ -296,12 +316,54 @@
                </property>
               </widget>
              </item>
+             <item row="2" column="1">
+              <widget class="QSpinBox" name="SpinBox_SamplingWidth">
+               <property name="font">
+                <font>
+                 <pointsize>9</pointsize>
+                </font>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+               </property>
+               <property name="suffix">
+                <string> µm</string>
+               </property>
+               <property name="value">
+                <number>5</number>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="0">
+              <widget class="QPushButton" name="Btn_Add">
+               <property name="minimumSize">
+                <size>
+                 <width>90</width>
+                 <height>28</height>
+                </size>
+               </property>
+               <property name="maximumSize">
+                <size>
+                 <width>16777215</width>
+                 <height>28</height>
+                </size>
+               </property>
+               <property name="font">
+                <font>
+                 <pointsize>10</pointsize>
+                </font>
+               </property>
+               <property name="text">
+                <string>Add Data</string>
+               </property>
+              </widget>
+             </item>
             </layout>
            </item>
           </layout>
-         </widget>
-        </item>
-       </layout>
+         </item>
+        </layout>
+       </widget>
       </widget>
       <widget class="QWidget" name="tabWidget_2Page2">
        <attribute name="title">
@@ -382,7 +444,7 @@
           </property>
           <layout class="QVBoxLayout" name="verticalLayout_4">
            <item>
-            <widget class="QPushButton" name="pushButton">
+            <widget class="QPushButton" name="Btn_ExportProfileData">
              <property name="minimumSize">
               <size>
                <width>0</width>
@@ -400,6 +462,13 @@
             </widget>
            </item>
           </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="ChkBox_Debug">
+          <property name="text">
+           <string>Debug Mode</string>
+          </property>
          </widget>
         </item>
         <item>

@@ -9,6 +9,8 @@ class DataProcessingTool():
         self.tieLine = []
         self.tieLineFlag = {}
         self.samplingPoints = []
+        self.samplingRange = []
+        self.samplingWidth = 0
 
     def getProfileLines(self, profilePoints):
         out = []
@@ -104,10 +106,11 @@ class DataProcessingTool():
 
         return [x, y]
  
-    def getRasterProfile(self, pLines, layer, band, fullRes):
+    def getRasterProfile(self, pLines, layer, band, fullRes, equiWidth=0):
         x = []
         y = []
         self.initSamplingPoints()
+        self.initSamplingRange()
         dp = layer.dataProvider()
         band = int(band.replace('Band ', ''))
         pixelSize = layer.rasterUnitsPerPixelX() if fullRes else 1
@@ -116,6 +119,8 @@ class DataProcessingTool():
         totalD = self.sumD(pLines)  # total distance of profile line
         tmpDMax = self.sumD(pLines[0:cP + 1])  # max distance of current segment
         tmpX, tmpY = pLines[cP]['s']
+        equiWidth = int(round( equiWidth / pixelSize))
+        self.setSamplingWidth(equiWidth)
         while tmpD < totalD:
             # first point of each segment
             if tmpD >= tmpDMax or tmpD == 0:
@@ -140,20 +145,58 @@ class DataProcessingTool():
                 dX *= pixelSize
                 dY *= pixelSize
 
-            qgsPoint = QgsPoint(tmpX, tmpY)
-            y.append(self.getPointValue(dp, qgsPoint, band))
+            # qgsPoint
+            # find equilevel
+            # get equilevel points => equiPoints
+            
+            equiPoints = self.getEquiPoints(tmpX, tmpY, equiWidth, dX, dY)
+            # qgsPoint[i] = QgsPoint(equiPoints[i].X, equiPoints[i].Y)
+            tmpVal = 0
+
+            self.addSamplingRange(equiPoints)
+            for n in xrange(0, len(equiPoints)):
+                # tmpVal += self.getPointValue(dp, qgsPoint[i], band)
+                qgsPoint = QgsPoint(equiPoints[n][0], equiPoints[n][1])
+                tmpVal += self.getPointValue(dp, qgsPoint, band)
+
+            aveVal = tmpVal / len(equiPoints)
+            # averageVal = tmpVal / length(equiPoints)
+            # y.append(tmpVal / len(equiPoints)) # add averaged value
+            # qgsPoint = QgsPoint(tmpX, tmpY)
+            # y.append(self.getPointValue(dp, qgsPoint, band))
+            y.append(aveVal)
             x.append(tmpD)
-            self.samplingPoints.append(qgsPoint)
+            self.samplingPoints.append(QgsPoint(tmpX, tmpY))
             tmpX += dX
             tmpY += dY
             tmpD += pixelSize
         else:
             endPoint = pLines[len(pLines) - 1]['e']
-            qgsPoint = QgsPoint(tmpX, tmpY)
-            y.append(self.getPointValue(dp, qgsPoint, band))
+            # qgsPoint = QgsPoint(tmpX, tmpY)
+            equiPoints = self.getEquiPoints(endPoint[0], endPoint[1], equiWidth, dX, dY)
+            tmpVal = 0
+            self.addSamplingRange(equiPoints)
+            for n in xrange(0, len(equiPoints)):
+                qgsPoint = QgsPoint(equiPoints[n][0], equiPoints[n][1])
+                tmpVal += self.getPointValue(dp, qgsPoint, band)
+            aveVal = tmpVal / len(equiPoints)
+            y.append(aveVal)
+            # y.append(self.getPointValue(dp, qgsPoint, band))
             x.append(totalD)
-            self.samplingPoints.append(qgsPoint)
+            # self.samplingPoints.append(qgsPoint)
+            self.samplingPoints.append(endPoint)
         return [x, y]
+
+    def getEquiPoints(self, x, y, w, dx, dy):
+        out = []
+        if w < 1:
+            out = [[x, y]]
+        else:
+            rdx = dy
+            rdy = -dx
+            for i in xrange(-w, w + 1):
+                out.append([x + i * rdx, y + i * rdy])
+        return out
 
     def getPointValue(self, dp, point, band):
         res = dp.identify(point, QgsRaster.IdentifyFormatValue).results()
@@ -319,6 +362,19 @@ class DataProcessingTool():
 
     def getSamplingPoints(self):
         return self.samplingPoints
+
+    def initSamplingRange(self):
+        self.samplingRange = []
+
+    def addSamplingRange(self, point):
+        self.samplingRange.append(point)
+
+    def getSamplingRange(self):
+        return self.samplingRange
+    def setSamplingWidth(self, width):
+        self.samplingWidth = width
+    def getSamplingWidth(self):
+        return self.samplingWidth
 
     def getDirectionSlope(self, pt):
         start = pt['s']

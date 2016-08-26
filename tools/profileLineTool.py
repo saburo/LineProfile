@@ -2,7 +2,7 @@
 from PyQt4.QtCore import QPoint, Qt, SIGNAL
 from PyQt4.QtGui import QColor
 from qgis.core import QgsPoint, QGis
-from qgis.gui import QgsMapTool, QgsRubberBand
+from qgis.gui import QgsMapTool, QgsRubberBand, QgsVertexMarker
 
 
 class ProfileLineTool(QgsMapTool):
@@ -17,9 +17,16 @@ class ProfileLineTool(QgsMapTool):
         self.rb.setColor(QColor(255, 20, 20, 250))
         self.rb.setIcon(QgsRubberBand.ICON_CIRCLE)
 
+        self.rbR = QgsRubberBand(canvas, True)  # False = not a polygon
+        self.rbR.setWidth(2)
+        self.rbR.setColor(QColor(255, 20, 20, 150))
+        self.rbR.setIcon(QgsRubberBand.ICON_CIRCLE)
+
         self.tieLines = []
         self.vertices = []
         self.rasterPoint = []
+        self.samplingRange = []
+
 
     def canvasPressEvent(self, event):
         pt = self.toMapCoordinates(QPoint(event.pos().x(), event.pos().y()))
@@ -28,11 +35,13 @@ class ProfileLineTool(QgsMapTool):
                 self.terminated = True
                 self.addVertex(pt, True)
                 self.emit(SIGNAL('proflineterminated'), {'dummm', 'mmmmy'})
+                print len(self.canvas.scene().items())
                 return
         if self.terminated is True:
             self.resetProfileLine()
         self.rb.addPoint(pt, True)
         self.addVertex(pt)
+
 
     def canvasMoveEvent(self, event):
         if self.terminated is False:
@@ -60,9 +69,11 @@ class ProfileLineTool(QgsMapTool):
 
     def resetProfileLine(self):
         self.rb.reset()
+        self.rbR.reset()
         self.resetTieLies()
         self.resetVertices()
         self.resetRasterPoints()
+        self.resetSamplingRange()
         self.terminated = False
 
     def drawTieLine(self, pt1, pt2):
@@ -75,6 +86,7 @@ class ProfileLineTool(QgsMapTool):
 
     def resetTieLies(self):
         [tl.reset() for tl in self.tieLines]
+        [self.canvas.scene().removeItem(tl) for tl in self.tieLines]
         self.tieLines = []
 
     def addVertex2(self, pt1):
@@ -84,6 +96,50 @@ class ProfileLineTool(QgsMapTool):
         tl.setColor(QColor(255, 255, 255, 200))
         tl.addPoint(QgsPoint(pt1[0], pt1[1]), True)
         self.rasterPoint.append(tl)
+
+    def addSamplingRange(self, pt1, terminator=False):
+        if terminator:
+            icon = QgsRubberBand.ICON_FULL_BOX
+        else:
+            icon = QgsRubberBand.ICON_CIRCLE
+        tl = QgsRubberBand(self.canvas, QGis.Point)
+        tl.setIconSize(3)
+        # tl.setWidth(5)
+        tl.setIcon(icon)
+        tl.setColor(QColor(255, 255, 220, 200))
+        tl.addPoint(QgsPoint(pt1[0], pt1[1]), True)
+        self.samplingRange.append(tl)
+
+    def addSamplingRange2(self, pt, terminator=False):
+        # tl = QgsRubberBand(self.canvas, True)
+        # tl.setWidth(1)
+        # tl.setColor(QColor(255, 255, 220, 200))
+
+        for pt1 in pt:
+            qpt = QgsPoint(pt1[0], pt1[1])
+            # tl.addPoint(qpt, True)
+            tl2 = QgsRubberBand(self.canvas, QGis.Point)
+            tl2.addPoint(qpt, True)
+            tl2.setIconSize(3)
+            tl2.setIcon(QgsRubberBand.ICON_CIRCLE)
+            tl2.setColor(QColor(255, 255, 100, 200))
+            self.samplingRange.append(tl2)
+            # vt = QgsVertexMarker(self.canvas)
+            # vt.setIconType(QgsVertexMarker.ICON_BOX)
+            # vt.setIconSize(2)
+            # vt.setColor(QColor(255, 0, 220, 200))
+            # vt.setCenter(qpt) 
+            # self.samplingRange.append(vt)
+        # self.samplingRange.append(tl)
+
+    def drawSamplingLine(self, lineWidth=3):
+        self.rbR.reset()
+        self.rbR.setWidth(lineWidth)
+        print self.rbR
+        for i in xrange(self.rb.numberOfVertices()):
+            pt = self.rb.getPoint(0, i)
+            print pt
+            self.rbR.addPoint(pt, True)
 
     def addVertex(self, pt1, terminator=False):
         if terminator:
@@ -110,11 +166,18 @@ class ProfileLineTool(QgsMapTool):
 
     def resetVertices(self):
         [tl.reset() for tl in self.vertices]
+        [self.canvas.scene().removeItem(tl) for tl in self.vertices]
         self.vertices = []
 
     def resetRasterPoints(self):
         [tl.reset() for tl in self.rasterPoint]
+        [self.canvas.scene().removeItem(tl) for tl in self.rasterPoint]
         self.rasterPoint = []
+
+    def resetSamplingRange(self):
+        [tl.reset() for tl in self.samplingRange]
+        [self.canvas.scene().removeItem(tl) for tl in self.samplingRange]
+        self.samplingRange = []
 
     # def activate(self):
     #     self.toolbarBtn.setCheckable(True)
