@@ -559,30 +559,46 @@ class LineProfile:
             print 'Error in file saving process: ' + str(error)
 
     def addDistanceToAttribute(self):
-        layer1 = self.getLayerById(self.dock.currentPLayer)
-        field1 = self.dock.myFields.currentText()
+        # pass
+        # layer1 = self.getLayerById(self.dock.currentPLayer)
+        # field1 = self.dock.myFields.currentText()
 
         newFieldName = self.expPLDialog.TBox_FieldName.text()
 
-        distLimit = self.dock.SpnBox_DistanceLimit.value()
-        if layer1.type() == 0:
-            dataProvider = layer1.dataProvider()
+        for r in xrange(self.model.rowCount()):
+            layer = self.getLayerById(self.model.getLayerId(r))
+            field = self.model.getDataName(r)
+            config = self.model.getConfigs(r)
+            if not layer or not self.model.getCheckState(r) or layer.type() == layer.RasterLayer:
+                continue
+            dataProvider = layer.dataProvider()
             dataProvider.addAttributes(
                 [QgsField(newFieldName, QVariant.Double)])
-            layer1.updateFields()
-            self.dpTool.getVectorProfile(
-                self.pLines, layer1, field1, distLimit, newFieldName)
+            layer.updateFields()
+            self.dpTool.getVectorProfile(self.pLines,
+                                         layer,
+                                         field,
+                                         config['maxDistance'],
+                                         newFieldName)
+        # distLimit = self.dock.SpnBox_DistanceLimit.value()
+        # if layer1.type() == 0:
+        #     dataProvider = layer1.dataProvider()
+        #     dataProvider.addAttributes(
+        #         [QgsField(newFieldName, QVariant.Double)])
+        #     layer1.updateFields()
+        #     self.dpTool.getVectorProfile(
+        #         self.pLines, layer1, field1, distLimit, newFieldName)
 
-        if self.dock.Grp_SecondaryY.isChecked():
-            layer2 = self.getLayerById(self.dock.currentSLayer)
-            field2 = self.dock.mySecondFields.currentText()
-            if layer2.type() == 0:
-                dataProvider = layer2.dataProvider()
-                dataProvider.addAttributes(
-                    [QgsField(newFieldName, QVariant.Double)])
-                layer2.updateFields()
-                self.dpTool.getVectorProfile(
-                    self.pLines, layer2, field2, distLimit, newFieldName)
+        # if self.dock.Grp_SecondaryY.isChecked():
+        #     layer2 = self.getLayerById(self.dock.currentSLayer)
+        #     field2 = self.dock.mySecondFields.currentText()
+        #     if layer2.type() == 0:
+        #         dataProvider = layer2.dataProvider()
+        #         dataProvider.addAttributes(
+        #             [QgsField(newFieldName, QVariant.Double)])
+        #         layer2.updateFields()
+        #         self.dpTool.getVectorProfile(
+        #             self.pLines, layer2, field2, distLimit, newFieldName)
 
     def openImportProfileLineDialog(self):
         self.impPLDialog = LPImportDialog(self.iface)
