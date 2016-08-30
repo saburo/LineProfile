@@ -35,13 +35,25 @@ class ProfileLineTool(QgsMapTool):
                 self.terminated = True
                 self.addVertex(pt, True)
                 self.emit(SIGNAL('proflineterminated'), {'dummm', 'mmmmy'})
-                print len(self.canvas.scene().items())
                 return
         if self.terminated is True:
             self.resetProfileLine()
         self.rb.addPoint(pt, True)
         self.addVertex(pt)
 
+    def updateProfileLine(self):
+        pt = self.getProfPoints()
+        self.rb.reset()
+        self.resetVertices()
+        ptLast = pt.pop()
+        for p in pt:
+            point = QgsPoint(p[0], p[1])
+            self.rb.addPoint(point, True)
+            self.addVertex(point)
+        point = QgsPoint(ptLast[0], ptLast[1])
+        self.rb.addPoint(point, True)
+        self.addVertex(point, True)
+        self.terminated = True
 
     def canvasMoveEvent(self, event):
         if self.terminated is False:
@@ -110,19 +122,34 @@ class ProfileLineTool(QgsMapTool):
         tl.addPoint(QgsPoint(pt1[0], pt1[1]), True)
         self.samplingRange.append(tl)
 
-    def addSamplingRange2(self, pt, terminator=False):
-        # tl = QgsRubberBand(self.canvas, True)
-        # tl.setWidth(1)
-        # tl.setColor(QColor(255, 255, 220, 200))
+    def addSamplingArea(self, pts, color):
+        myColor = QColor(color)
+        myColor.setAlpha(35)
+        for pt in pts:
+            rb = QgsRubberBand(self.canvas, QGis.Polygon)
+            rb.addPoint(QgsPoint(pt[0][0], pt[0][1]))
+            rb.addPoint(QgsPoint(pt[1][0], pt[1][1]))
+            rb.addPoint(QgsPoint(pt[3][0], pt[3][1]))
+            rb.addPoint(QgsPoint(pt[2][0], pt[2][1]))
+            rb.addPoint(QgsPoint(pt[0][0], pt[0][1]))
+            rb.setColor(myColor)
+            rb.setWidth(2)
+            # rb.show()
+            self.samplingRange.append(rb)
 
-        for pt1 in pt:
+
+    def addSamplingRange2(self, pts, color):
+        myColor = QColor(color)
+        myColor.setAlpha(200)
+        mySize = 3
+        for pt1 in pts:
             qpt = QgsPoint(pt1[0], pt1[1])
             # tl.addPoint(qpt, True)
             tl2 = QgsRubberBand(self.canvas, QGis.Point)
             tl2.addPoint(qpt, True)
-            tl2.setIconSize(3)
+            tl2.setIconSize(mySize)
             tl2.setIcon(QgsRubberBand.ICON_CIRCLE)
-            tl2.setColor(QColor(255, 255, 100, 200))
+            tl2.setColor(myColor)
             self.samplingRange.append(tl2)
             # vt = QgsVertexMarker(self.canvas)
             # vt.setIconType(QgsVertexMarker.ICON_BOX)

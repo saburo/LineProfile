@@ -24,7 +24,7 @@ from PyQt4.QtCore import QObject, SIGNAL, QSettings, QTranslator, qVersion, \
                          QCoreApplication, QVariant, Qt, QTimer
 
 from PyQt4.QtGui import QAction, QIcon, QFileDialog, QColorDialog, \
-                        QStandardItemModel, QMessageBox
+                        QStandardItemModel, QMessageBox, QColor
 
 from qgis.core import QgsVectorLayer, QgsField, QgsFeature, QgsGeometry, \
                       QgsPoint, QgsVectorFileWriter
@@ -208,6 +208,7 @@ class LineProfile:
         self.dpTool = DataProcessingTool()
 
 
+
     def unload(self):
         print 'unloading'
         """Removes the plugin menu item and icon from QGIS GUI."""
@@ -283,17 +284,19 @@ class LineProfile:
                         SIGNAL("clicked()"), self.exportPlot)
         QObject.connect(self.dock.ChkBox_TieLine, 
                         SIGNAL("stateChanged(int)"), self.updatePlot)
-        QObject.connect(self.dock.ChkBox_SamplingRange, 
+        QObject.connect(self.dock.ChkBox_ShowSamplingPoints,
                         SIGNAL("stateChanged(int)"), self.updatePlot)
-        QObject.connect(self.dock.ChkBox_Debug,
+        QObject.connect(self.dock.ChkBox_ShowSamplingAreas,
                         SIGNAL("stateChanged(int)"), self.updatePlot)
-        QObject.connect(self.dock.SpinBox_SamplingWidth,
-                        SIGNAL("valueChanged(int)"), self.updatePlot)
         QObject.connect(self.dock.Btn_ExportProfileData,
                         SIGNAL("clicked()"), self.exportProfileData)
         QObject.connect(self.dock, SIGNAL('showConfig'), self.showConfigDialog)
-        QObject.connect(self.dock, SIGNAL('resized'), self.updatePlot)
-
+        # QObject.connect(self.dock, SIGNAL('resized'), self.updatePlot)
+        QObject.connect(self.dock, SIGNAL('resized'), self.windowResizeEvent)
+        QObject.connect(self.timer2, SIGNAL('timeout()'),
+                        self.windowResizeEventTimeOut)
+        QObject.connect(self.dock.CmbBox_ProfileLine,
+                        SIGNAL("currentIndexChanged(int)"), self.changeCurrentProfileLine)
         # model
         QObject.connect(self.model, SIGNAL('itemChanged(QStandardItem*)'),
                         self.myConnect)
@@ -322,12 +325,10 @@ class LineProfile:
                                SIGNAL("clicked(bool)"), self.exportPlot)
             QObject.disconnect(self.dock.ChkBox_TieLine,
                                SIGNAL("stateChanged(int)"), self.updatePlot)
-            QObject.disconnect(self.dock.ChkBox_SamplingRange,
+            QObject.disconnect(self.dock.ChkBox_ShowSamplingPoints,
                                SIGNAL("stateChanged(int)"), self.updatePlot)
-            QObject.disconnect(self.dock.ChkBox_Debug,
+            QObject.disconnect(self.dock.ChkBox_ShowSamplingAreas,
                                SIGNAL("stateChanged(int)"), self.updatePlot)
-            QObject.disconnect(self.dock.SpinBox_SamplingWidth,
-                               SIGNAL("valueChanged(int)"), self.updatePlot)
             QObject.disconnect(self.dock.Btn_ExportProfileData,
                                SIGNAL("clicked()"), self.exportProfileData)
             QObject.disconnect(self.dock.myExportProfileLineBtn,
@@ -379,6 +380,14 @@ class LineProfile:
         self.configPlotDialog = LPConfigPlotDialog(self.iface, self.model, index)
         self.configPlotDialog.show()
 
+    def windowResizeEvent(self):
+        self.windowResizeState = True
+        print 'window resize start'
+
+    def windowResizeEventTimeOut(self):
+        if self.windowResizeState:
+           pass
+
     def refreshModel(self):
         legend = self.iface.legendInterface()
         layers = legend.layers()
@@ -424,48 +433,67 @@ class LineProfile:
         self.profLineTool.resetSamplingRange()
         # initialize sampling points on raster layer for debugging
         self.dpTool.initSamplingPoints()
+        self.dpTool.initSamplingArea()
 
         self.data = []
+        rasterCounts = 0
 
         # distLimit = self.dock.SpnBox_DistanceLimit.value()
         for r in xrange(self.model.rowCount()):
             layer = self.getLayerById(self.model.getLayerId(r))
             if not layer or not self.model.getCheckState(r):
                 continue
+
+            print layer.name()
             field = self.model.getDataName(r)
-            config = self.model.getConfigs(r) 
+            config = self.model.getConfigs(r)
+            label = unicode(self.model.getDataName(r))
+            color_org = unicode(self.model.getColorName(r))
+            layer_type = layer.type()
+
             if layer.type() == layer.VectorLayer:
-                self.data.append(self.dpTool.getVectorProfile(self.pLines,
-                            layer, field, config['maxDistance']))
+                myData = self.dpTool.getVectorProfile(self.pLines,
+                            layer, field, config['maxDistance'])
             elif layer.type() == layer.RasterLayer:
-                self.data.append(self.dpTool.getRasterProfile(self.pLines,
+                myData = self.dpTool.getRasterProfile(self.pLines,
                             layer, field, config['fullRes'], 
-                            int(self.dock.ChkBox_SamplingRange.isChecked()) * self.dock.SpinBox_SamplingWidth.value()))
+                            int(config['areaSampling']) * config['areaSamplingWidth'])
+                            # int(self.dock.ChkBox_SamplingRange.isChecked()) * self.dock.SpinBox_SamplingWidth.value())
+                if config['areaSampling']:
+                    if self.dock.ChkBox_ShowSamplingPoints.isChecked():
+                        for pt in self.dpTool.getSamplingRange():
+                            self.profLineTool.addSamplingRange2(pt, color_org)
+                    if self.dock.ChkBox_ShowSamplingAreas.isChecked():
+                        self.profLineTool.addSamplingArea(self.dpTool.getSamplingArea(), color_org)
+
+            self.data.append({'data': myData,
+                              'label': label,
+                              'configs': config,
+                              'layer': layer, 
+                              'layer_type': layer_type,
+                              'color_org': color_org})
         # draw tie lines
         if self.dock.ChkBox_TieLine.isChecked():
             for pt in self.dpTool.getTieLines():
                 self.profLineTool.drawTieLine(pt[0], pt[1])
-            # draw sampling points on raster layer for debugging
-            if self.debugFlag is True:
-                for pt in self.dpTool.getSamplingPoints():
-                    self.profLineTool.addVertex2(pt)
+
+        # draw sampling points on raster layer for debugging
+        if self.debugFlag is True:
+            for pt in self.dpTool.getSamplingPoints():
+                self.profLineTool.addVertex2(pt)
 
         # # sampling range 
         # if self.dock.ChkBox_SamplingRange.isChecked():
         #     self.profLineTool.drawSamplingLine(self.dpTool.getSamplingWidth())
 
         # dots/lines
-        if self.dock.ChkBox_SamplingRange.isChecked() and self.dock.ChkBox_Debug.isChecked():
-            self.profLineTool.resetSamplingRange()
-            for pt in self.dpTool.getSamplingRange():
-                self.profLineTool.addSamplingRange2(pt, False)
+        # if self.dock.ChkBox_SamplingRange.isChecked() and self.dock.ChkBox_Debug.isChecked():
+        #     for pt in self.dpTool.getSamplingRange():
+        #         self.profLineTool.addSamplingRange2(pt, False)
 
+        self.profLineTool.updateProfileLine()
 
         # draw line profile
-        dList = [r for r in range(self.model.rowCount()) 
-                    if self.model.getCheckState(r) == Qt.Checked]
-        print dList
-        self.expData = [d for d in self.data]
         self.plotTool.drawPlot3(self.pLines, self.data)
 
     def resetPlot(self):
@@ -602,11 +630,50 @@ class LineProfile:
         fileName = QFileDialog.getSaveFileName(self.iface.mainWindow(),
                                                "Save As",
                                                os.environ['HOME'],
-                                               "text file (*.txt)")
+                                               "Tab Deliminated Text (*.txt);;\
+                                                Comma Separated Values (*.csv)")
         if fileName:
-            print fileName
-            print self.pLines
-            print self.expData
+            myD = []
+            myL = 0
+            out = []
+            filePath, fileType = os.path.splitext(fileName)
+            if fileType == '.txt':
+                sep = "\t"
+            elif fileType == '.csv':
+                sep = ","
+            else:
+                sep = " "
+
+            for d in self.data:
+                curL = len(d['data'][0])
+                myL = curL if curL >= myL else myL
+            for d in self.data:
+                label = d['layer'].name() + '_' + d['label']
+                # transpose data rows and columns
+                a = [list(x) for x in zip(*d['data'])]
+                curL = len(a)
+                # padded by '' for shorter data length
+                for n in xrange(myL - curL):
+                    a.append(['', ''])
+                a.insert(0, ['distance (micron)', label])
+                myD.append(a)
+            for r in xrange(myL + 1): # plus 1 for label
+                l = []
+                for c in myD:
+                    l += c[r]
+                out.append(sep.join(str(ll) for ll in l))
+
+            with open(fileName, 'w') as f:
+                f.write("\n".join(out))
+                # f.close()
+
+
+
+
+                
+            # print fileName
+            # print self.pLines
+            # print self.data
             # for i in self.expData:
 
             # f = open(filenName, 'w')

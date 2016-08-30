@@ -18,6 +18,7 @@ class LPConfigPlotDialog(QDialog, FORM_CLASS):
         self.index = index
         self.data = {}
         self.row = self.model.itemFromIndex(self.index).row()
+
         QObject.connect(self.plotColor, SIGNAL("clicked()"),
                         self.changePlotColor)
 
@@ -26,12 +27,16 @@ class LPConfigPlotDialog(QDialog, FORM_CLASS):
                         self.changeDataName)
         QObject.connect(self.CKB_MovAve, SIGNAL("stateChanged(int)"),
                         self.changeMovAveState)
-        QObject.connect(self.SPN_MovAveN, SIGNAL("editingFinished()"),
+        QObject.connect(self.SPN_MovAveN, SIGNAL("valueChanged(int)"),
                         self.changeMovAveN)
         QObject.connect(self.CKB_FullRes, SIGNAL("stateChanged(int)"),
                         self.changeFullResState)
         QObject.connect(self.SPN_MaxDist, SIGNAL("editingFinished()"),
                         self.changeMaxDist)
+        QObject.connect(self.CKB_SamplingState, SIGNAL("stateChanged(int)"),
+                        self.changeAreaSamplingState)
+        QObject.connect(self.SPN_SamplingWidth, SIGNAL("valueChanged(int)"),
+                        self.changeAreaSamplingWidth)
         QObject.connect(self.BTN_Remove, SIGNAL("clicked()"), self.removeData)
         QObject.connect(self.GRP_Main, SIGNAL("clicked(bool)"),
                         self.changeVisibleState)
@@ -63,6 +68,12 @@ class LPConfigPlotDialog(QDialog, FORM_CLASS):
     def changeFullResState(self, state):
         self.model.setConfigs(self.row, {'fullRes': state})
 
+    def changeAreaSamplingState(self, state):
+        self.model.setConfigs(self.row, {'areaSampling': state })
+
+    def changeAreaSamplingWidth(self):
+        self.model.setConfigs(self.row, {'areaSamplingWidth': self.SPN_SamplingWidth.value()})
+
     def changeMaxDist(self):
         sameLayers = self.model.findSameLayers(self.model.getLayerId(self.row))
         config = {'maxDistance': self.SPN_MaxDist.value()}
@@ -90,6 +101,10 @@ class LPConfigPlotDialog(QDialog, FORM_CLASS):
         # set full resolution
         self.CKB_FullRes.setCheckState(config['fullRes'])
 
+        # set sampling area
+        self.CKB_SamplingState.setCheckState(config['areaSampling'])
+        self.SPN_SamplingWidth.setValue(config['areaSamplingWidth'])
+
         # set max distance
         self.SPN_MaxDist.setValue(config['maxDistance'])
 
@@ -99,6 +114,8 @@ class LPConfigPlotDialog(QDialog, FORM_CLASS):
             self.GRP_Vector.setEnabled(False)
             self.CKB_MovAve.setEnabled(True)
             self.SPN_MovAveN.setEnabled(True)
+            self.CKB_SamplingState.setEnabled(True)
+            self.SPN_SamplingWidth.setEnabled(True)
             self.SPN_MaxDist.setEnabled(False)
         else:  # Vector
             self.GRP_Raster.setEnabled(False)
@@ -106,6 +123,8 @@ class LPConfigPlotDialog(QDialog, FORM_CLASS):
             self.CKB_MovAve.setEnabled(False)
             self.SPN_MovAveN.setEnabled(False)
             self.SPN_MaxDist.setEnabled(True)
+            self.CKB_SamplingState.setEnabled(False)
+            self.SPN_SamplingWidth.setEnabled(False)
 
     def setComboBoxItems(self, cmbBox, layerId):
         layers = self.iface.mapCanvas().layers()

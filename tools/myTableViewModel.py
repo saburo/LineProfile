@@ -27,6 +27,7 @@ class MyTableViewModel(QStandardItemModel):
         self.movAveDefault = 10
         self.maxDistDefault = 100.00
         self.lineWidthDefault = 1
+        self.areaSampleWidthDafault = 5
 
     """""""""""""""""""""""""""""""""""""""
     * Methods
@@ -61,6 +62,8 @@ class MyTableViewModel(QStandardItemModel):
             'maxDistance': mDist,                  # float
             'lineWidth': self.lineWidthDefault,  # float
             'fullRes': Qt.Unchecked,           # int
+            'areaSampling': Qt.Unchecked,      # int
+            'areaSamplingWidth': self.areaSampleWidthDafault, 
         }
         newRow[self.c['config']].setData(config)
         self.appendRow(newRow)

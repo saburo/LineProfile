@@ -22,6 +22,7 @@ class PlottingTool:
 
     def getPlotWidget(self):
         bgColor = u'#F9F9F9'
+        bgColor = u'#E4E4E4'
         spp = mpl.figure.SubplotParams(left=0, bottom=0, right=1, top=1, 
                                        wspace=0, hspace=0)
         self.fig = Figure(figsize=(1, 1),
@@ -98,68 +99,53 @@ class PlottingTool:
     def drawPlot3(self, pLines, data, **opt):
         # clear current plot
         self.resetPlot()
-        
         self.par = []
-        dList = [r for r in range(self.model.rowCount()) 
-                    if self.model.getCheckState(r) == Qt.Checked]
-        # host axis
-        r = dList.pop(0)
-        hostData = data.pop(0)
-        label = unicode(self.model.getDataName(r))
-        color_org = unicode(self.model.getColorName(r))
-        configs = self.model.getConfigs(r)
-        if self.model.getLayerType(r) and configs['movingAverage']:
-            color = ColorConverter().to_rgba(color_org, alpha=0.1)
-            self.movingAverage(self.host, hostData, 
-                               color_org, configs['movingAverageN'])
-        else:
-            color = color_org
-        leftA, = self.host.plot(hostData[0], hostData[1], 
-                                label=label, c=color,
-                                marker=u'o',
-                                markersize=self.getMarkerSize(10, len(hostData[0])))
-        self.host.set_ylabel(label)
-        self.host.set_xlabel(u"Distance [µm]")
-        self.host.minorticks_on()
-        self.host.axis["bottom"].label.set_fontsize(10)
-        self.host.axis["bottom"].major_ticklabels.set_fontsize(8)
-        self.host.axis["left"].major_ticklabels.set_fontsize(8)
-        self.host.axis["left"].label.set_color(color_org)
-        self.cid = self.mcv.mpl_connect('motion_notify_event', self.tracer)
-        # other connectable event 'button_release_event'
 
-        # parasite axes
-        for i in data:
-            r = dList.pop(0)
-            self.par.append(self.host.twinx())
-            j = len(self.par) - 1
-            configs = self.model.getConfigs(r)
-            label = unicode(self.model.getDataName(r))
-            color_org = unicode(self.model.getColorName(r))
-            if self.model.getLayerType(r) and configs['movingAverage']:
-                color = ColorConverter().to_rgba(color_org, alpha=0.1)
+        dataN = 0
+        for d in data:
+            dataN += 1
+            if d['layer_type'] and d['configs']['movingAverage']:
+                color = ColorConverter().to_rgba(d['color_org'], alpha=0.1)
+                self.movingAverage(self.host, d['data'], 
+                                   d['color_org'], d['configs']['movingAverageN'])
             else:
-                color = color_org
-            # isolated axes
-            if j > 0:
-                offset = 50 * j
-                new_fixed_axis = self.par[j].get_grid_helper().new_fixed_axis
-                self.par[j].axis["right"] = new_fixed_axis(loc="right",
-                                                           axes=self.par[j],
-                                                           offset=(offset, 0))
-                self.par[j].axis["right"].toggle(all=True)
-            tmp, = self.par[j].plot(i[0], i[1],
-                                    label=label, c=color,
-                                    marker=u's',
-                                    markersize=self.getMarkerSize(10, len(i[0])))
-            if self.model.getLayerType(r) and configs['movingAverage']:
-                self.movingAverage(self.par[j], i, color_org,
-                                   configs['movingAverageN'])
-            self.par[j].set_ylabel(label)
-            self.par[j].minorticks_on()
-            self.par[j].axis["right"].major_ticklabels.set_fontsize(8)
-            self.par[j].axis["right"].label.set_fontsize(10)
-            self.par[j].axis["right"].label.set_color(color_org)
+                color = d['color_org']
+
+            if dataN == 1: # host data (1st data)
+                leftA, = self.host.plot(d['data'][0], d['data'][1], 
+                                        label=d['label'], c=color,
+                                        marker=u'o',
+                                        markersize=self.getMarkerSize(10, len(d['data'][0])))
+                self.host.set_ylabel(d['label'])
+                self.host.set_xlabel(u"Distance [µm]")
+                self.host.minorticks_on()
+                self.host.axis["bottom"].label.set_fontsize(10)
+                self.host.axis["bottom"].major_ticklabels.set_fontsize(8)
+                self.host.axis["left"].major_ticklabels.set_fontsize(8)
+                self.host.axis["left"].label.set_color(d['color_org'])
+                self.cid = self.mcv.mpl_connect('motion_notify_event', self.tracer)
+                # other connectable event 'button_release_event'
+            else: # after second plot (data)
+            # parasite axes
+                self.par.append(self.host.twinx())
+                j = len(self.par) - 1
+                # isolated axes
+                if j > 0:
+                    offset = 50 * j
+                    new_fixed_axis = self.par[j].get_grid_helper().new_fixed_axis
+                    self.par[j].axis["right"] = new_fixed_axis(loc="right",
+                                                               axes=self.par[j],
+                                                               offset=(offset, 0))
+                    self.par[j].axis["right"].toggle(all=True)
+                tmp, = self.par[j].plot(d['data'][0], d['data'][1],
+                                        label=d['label'], c=color,
+                                        marker=u's',
+                                        markersize=self.getMarkerSize(10, len(d['data'][0])))
+                self.par[j].set_ylabel(d['label'])
+                self.par[j].minorticks_on()
+                self.par[j].axis["right"].major_ticklabels.set_fontsize(8)
+                self.par[j].axis["right"].label.set_fontsize(10)
+                self.par[j].axis["right"].label.set_color(d['color_org'])
 
         # draw vertical line for 
         d = 0

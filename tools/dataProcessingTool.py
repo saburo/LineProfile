@@ -10,6 +10,7 @@ class DataProcessingTool():
         self.tieLineFlag = {}
         self.samplingPoints = []
         self.samplingRange = []
+        self.samplingArea = []
         self.samplingWidth = 0
 
     def getProfileLines(self, profilePoints):
@@ -111,16 +112,21 @@ class DataProcessingTool():
         y = []
         self.initSamplingPoints()
         self.initSamplingRange()
+        self.initSamplingArea()
+
         dp = layer.dataProvider()
         band = int(band.replace('Band ', ''))
         pixelSize = layer.rasterUnitsPerPixelX() if fullRes else 1
+        print layer.name()
+        print pixelSize
         cP = 0  # index number of current segment
         tmpD = 0  # current distance within current segment
         totalD = self.sumD(pLines)  # total distance of profile line
         tmpDMax = self.sumD(pLines[0:cP + 1])  # max distance of current segment
         tmpX, tmpY = pLines[cP]['s']
-        equiWidth = int(round( equiWidth / pixelSize))
+        equiWidth = int(round( equiWidth / 2 / pixelSize))
         self.setSamplingWidth(equiWidth)
+        acP = -1
         while tmpD < totalD:
             # first point of each segment
             if tmpD >= tmpDMax or tmpD == 0:
@@ -148,7 +154,13 @@ class DataProcessingTool():
             # qgsPoint
             # find equilevel
             # get equilevel points => equiPoints
-            
+            if acP is not cP:
+                acP = cP
+                # start point
+                acP_s = self.getEquiPoints(pLines[acP]['s'][0], pLines[acP]['s'][1], equiWidth, dX, dY)
+                # end point
+                acP_e = self.getEquiPoints(pLines[acP]['e'][0], pLines[acP]['e'][1], equiWidth, dX, dY)
+                self.addSamplingArea([acP_s[0], acP_s[-1], acP_e[0], acP_e[-1]])
             equiPoints = self.getEquiPoints(tmpX, tmpY, equiWidth, dX, dY)
             # qgsPoint[i] = QgsPoint(equiPoints[i].X, equiPoints[i].Y)
             tmpVal = 0
@@ -366,11 +378,21 @@ class DataProcessingTool():
     def initSamplingRange(self):
         self.samplingRange = []
 
+    def initSamplingArea(self):
+        self.samplingArea = []
+
     def addSamplingRange(self, point):
         self.samplingRange.append(point)
 
+    def addSamplingArea(self, myList):
+        self.samplingArea.append(myList)
+
     def getSamplingRange(self):
         return self.samplingRange
+
+    def getSamplingArea(self):
+        return self.samplingArea
+
     def setSamplingWidth(self, width):
         self.samplingWidth = width
     def getSamplingWidth(self):
