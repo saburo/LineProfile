@@ -7,7 +7,8 @@ class DataProcessingTool():
 
     def __init__(self):
         self.tieLine = []
-        self.tieLineFlag = {}
+        self.tieLineFlag = False
+        self.tieLineDone = []
         self.samplingPoints = []
         self.samplingRange = []
         self.samplingArea = []
@@ -29,8 +30,7 @@ class DataProcessingTool():
         return out
 
     def getVectorProfile(self, pLines, layer, field,
-                         distLimit=1000000,
-                         distanceField=None):
+                         distLimit=1000000, distanceField=None, pIndex=0):
         x = []
         y = []
         d = 0
@@ -41,11 +41,19 @@ class DataProcessingTool():
 
         if distanceField:
             layer.startEditing()
+
         lid = layer.id()
-        if lid in self.tieLineFlag.keys() and self.tieLineFlag[lid]:
+
+        while len(self.tieLine) <= pIndex:
+            self.tieLine.append([])
+            self.tieLineDone.append([])
+
+        if lid not in self.tieLineDone[pIndex]:
             tieLineFlag = True
+            self.tieLineDone[pIndex].append(lid)
         else:
             tieLineFlag = False
+
         for f in featuresForPlot:
             # calc coordinates of intercept between normal line and profile line
             if type(f.attribute(field)) is type(QPyNullVariant(int)):
@@ -58,8 +66,10 @@ class DataProcessingTool():
                                       pLines[prjPoint[2]]['s'])
                 x.append(d)
                 y.append(f.attribute(field))
-                if not tieLineFlag:
-                    self.addTieLine(pt, prjPoint[:2])
+
+                if tieLineFlag:
+                    self.addTieLine(pIndex, list(pt), prjPoint[:2])
+
                 if distanceField:
                     f[distanceField] = d
                     layer.updateFeature(f)
@@ -67,7 +77,6 @@ class DataProcessingTool():
         if distanceField:
             layer.commitChanges()
         x, y = self.sortDataByX(x, y)
-        self.tieLineFlag[lid] = True
 
         return [x, y]
 
@@ -117,8 +126,6 @@ class DataProcessingTool():
         dp = layer.dataProvider()
         band = int(band.replace('Band ', ''))
         pixelSize = layer.rasterUnitsPerPixelX() if fullRes else 1
-        print layer.name()
-        print pixelSize
         cP = 0  # index number of current segment
         tmpD = 0  # current distance within current segment
         totalD = self.sumD(pLines)  # total distance of profile line
@@ -359,15 +366,17 @@ class DataProcessingTool():
     def getDistance(self, pt1, pt2):
         return sqrt((pt2[0] - pt1[0])**2 + (pt2[1] - pt1[1])**2)
 
-    def addTieLine(self, pt1, pt2):
-        self.tieLine.append([pt1, pt2])
+    def initTieLines(self):
+        self.tieLine = []
+        self.tieLineFlag = False
+        self.tieLineDone = []
+
+    def addTieLine(self, pIndex, pt1, pt2):
+        self.tieLine[pIndex].append([pt1, pt2])
 
     def getTieLines(self):
         return self.tieLine
 
-    def initTieLines(self):
-        self.tieLine = []
-        self.tieLineFlag = {}
 
     def initSamplingPoints(self):
         self.samplingPoints = []

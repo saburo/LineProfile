@@ -12,10 +12,9 @@ class ProfileLineTool(QgsMapTool):
         self.canvas = canvas
         self.toolbarBtn = toolbarBtn
         self.terminated = True
-        self.rb = QgsRubberBand(canvas, True)  # False = not a polygon
-        self.rb.setWidth(2)
-        self.rb.setColor(QColor(255, 20, 20, 250))
-        self.rb.setIcon(QgsRubberBand.ICON_CIRCLE)
+        self.rb = -1
+        self.rbs = []
+
 
         self.rbR = QgsRubberBand(canvas, True)  # False = not a polygon
         self.rbR.setWidth(2)
@@ -27,6 +26,31 @@ class ProfileLineTool(QgsMapTool):
         self.rasterPoint = []
         self.samplingRange = []
 
+        self.plColor = [QColor(255, 20, 20, 250), 
+                        QColor(20, 20, 255, 250),
+                        QColor(20, 255, 20, 250)]
+
+    def initProfileLine(self):
+        if len(self.rbs) >= 2:
+            return -1
+        cIndex = len(self.rbs)
+        rb = QgsRubberBand(self.canvas, True)  # False = not a polygon
+        rb.setWidth(2)
+        rb.setIcon(QgsRubberBand.ICON_CIRCLE)
+        rb.setColor(self.plColor[cIndex])
+        self.rbs.append(rb)
+        self.changeProfileLine(cIndex)
+        self.vertices.append([])
+        self.tieLines.append([])
+        
+        return cIndex
+
+    def getCurrentProfileLine(self):
+        return self.rb
+
+    def changeProfileLine(self, pIndex):
+        # self.resetProfileLine()
+        self.rb = pIndex
 
     def canvasPressEvent(self, event):
         pt = self.toMapCoordinates(QPoint(event.pos().x(), event.pos().y()))
@@ -38,10 +62,27 @@ class ProfileLineTool(QgsMapTool):
                 return
         if self.terminated is True:
             self.resetProfileLine()
-        self.rb.addPoint(pt, True)
+        self.rbs[self.rb].addPoint(pt, True)
         self.addVertex(pt)
 
+    def canvasMoveEvent(self, event):
+        if self.terminated is False and self.rb >= 0:
+            plen = self.rbs[self.rb].numberOfVertices()
+            if plen > 0:
+                pt = self.toMapCoordinates(
+                    QPoint(event.pos().x(), event.pos().y()))
+                self.rbs[self.rb].movePoint(plen - 1, pt)
+
+    def canvasReleaseEvent(self, event):
+        pass
+
+    def canvasDoubleClickEvent(self, event):
+        self.resetProfileLine()
+        self.emit(SIGNAL('doubleClicked'))
+
     def updateProfileLine(self):
+        pass
+        return
         pt = self.getProfPoints()
         self.rb.reset()
         self.resetVertices()
@@ -55,40 +96,64 @@ class ProfileLineTool(QgsMapTool):
         self.addVertex(point, True)
         self.terminated = True
 
-    def canvasMoveEvent(self, event):
-        if self.terminated is False:
-            plen = self.rb.numberOfVertices()
-            if plen > 0:
-                pt = self.toMapCoordinates(
-                    QPoint(event.pos().x(), event.pos().y()))
-                self.rb.movePoint(plen - 1, pt)
-
-    def canvasReleaseEvent(self, event):
-        pass
-
-    def canvasDoubleClickEvent(self, event):
-        self.emit(SIGNAL('doubleClicked'))
-        self.resetProfileLine()
+    def getAllProfPoints(self):
+        profVtx = []
+        if self.rb == -1:
+            return profVtx
+        for r in self.rbs:
+            vtx = []
+            n = r.numberOfVertices()
+            for i in xrange(n):
+                pt = r.getPoint(0, i)
+                vtx.append([pt.x(), pt.y()])
+            # if len(vtx):
+            profVtx.append(vtx)
+        return profVtx
 
     def getProfPoints(self):
         # [[x0, y0], [x1, y1], [x2, y2],. ., [xn, yn]]
-        n = self.rb.numberOfVertices()
         profVertices = []
+        if self.rb == -1:
+            return profVertices
+
+        n = self.rbs[self.rb].numberOfVertices()
         for i in xrange(n):
-            pt = self.rb.getPoint(0, i)
+            pt = self.rbs[self.rb].getPoint(0, i)
             profVertices.append([pt.x(), pt.y()])
         return profVertices
 
-    def resetProfileLine(self):
-        self.rb.reset()
+    def resetProfileLine(self, all=False):
+        if self.rb >= 0:
+            self.rbs[self.rb].reset()
+        if all:
+            [myRb.reset() for myRb in self.rbs]
         self.rbR.reset()
-        self.resetTieLies()
-        self.resetVertices()
+        self.resetTieLines(all)
+        self.resetVertices(all)
         self.resetRasterPoints()
         self.resetSamplingRange()
         self.terminated = False
 
-    def drawTieLine(self, pt1, pt2):
+    def drawTieLine(self, pts):
+        self.resetTieLines(True)
+        for pIndex in xrange(len(pts)):
+            r = 0.35
+            pColor = self.plColor[pIndex]
+            yColor = QColor(255,240,60)
+            color = QColor(pColor.red()   * r + yColor.red()   * (1 - r),
+                           pColor.green() * r + yColor.green() * (1 - r),
+                           pColor.blue()  * r + yColor.blue()  * (1 - r))
+            color.setAlpha(150)
+            self.tieLines.append([])
+            for pt in pts[pIndex]:
+                tl = QgsRubberBand(self.canvas, True)
+                tl.setWidth(1)
+                tl.setColor(color)
+                tl.addPoint(QgsPoint(pt[0][0], pt[0][1]), True)
+                tl.addPoint(QgsPoint(pt[1][0], pt[1][1]), True)
+                self.tieLines[pIndex].append(tl)
+
+    def drawTieLine2(self, pt1, pt2):
         tl = QgsRubberBand(self.canvas, True)
         tl.setWidth(1)
         tl.setColor(QColor(255, 255, 100, 200))
@@ -96,10 +161,17 @@ class ProfileLineTool(QgsMapTool):
         tl.addPoint(QgsPoint(pt2[0], pt2[1]), True)
         self.tieLines.append(tl)
 
-    def resetTieLies(self):
-        [tl.reset() for tl in self.tieLines]
-        [self.canvas.scene().removeItem(tl) for tl in self.tieLines]
-        self.tieLines = []
+    def resetTieLines(self, all=False):
+        if self.rb < 0 or reduce(lambda x, y: x + len(y), self.tieLines, 0) == 0:
+            return
+        if all:
+            for pIndex in xrange(len(self.tieLines)):
+                [tl.reset() for tl in self.tieLines[pIndex]]
+                [self.canvas.scene().removeItem(tl) for tl in self.tieLines[pIndex]]
+            self.tieLines = []
+        else:
+            [tl.reset() for tl in self.tieLines[self.rb]]
+            [self.canvas.scene().removeItem(tl) for tl in self.tieLines[self.rb]]
 
     def addVertex2(self, pt1):
         tl = QgsRubberBand(self.canvas, QGis.Point)
@@ -162,10 +234,8 @@ class ProfileLineTool(QgsMapTool):
     def drawSamplingLine(self, lineWidth=3):
         self.rbR.reset()
         self.rbR.setWidth(lineWidth)
-        print self.rbR
         for i in xrange(self.rb.numberOfVertices()):
             pt = self.rb.getPoint(0, i)
-            print pt
             self.rbR.addPoint(pt, True)
 
     def addVertex(self, pt1, terminator=False):
@@ -177,24 +247,32 @@ class ProfileLineTool(QgsMapTool):
         tl.setIconSize(10)
         # tl.setWidth(5)
         tl.setIcon(icon)
-        tl.setColor(QColor(255, 100, 100, 200))
+        tl.setColor(self.plColor[self.rb])
         tl.addPoint(QgsPoint(pt1[0], pt1[1]), True)
-        self.vertices.append(tl)
+        self.vertices[self.rb].append(tl)
 
     def drawProfileLineFromPoints(self, points):
         self.resetProfileLine()
         num = len(points)
-        for i in range(0, num - 1):
-            self.rb.addPoint(points[i], True)
+        for i in xrange(num - 1):
+            self.rbs[self.rb].addPoint(points[i], True)
             self.addVertex(points[i])
         self.terminated = True
-        self.rb.addPoint(points[i + 1], True)
+        self.rbs[self.rb].addPoint(points[i + 1], True)
         self.addVertex(points[i + 1], True)
 
-    def resetVertices(self):
-        [tl.reset() for tl in self.vertices]
-        [self.canvas.scene().removeItem(tl) for tl in self.vertices]
-        self.vertices = []
+    def resetVertices(self, full=False):
+        if self.rb < 0:
+            return
+        if full:
+            for vtx in self.vertices:
+                [v.reset() for v in vtx]
+            for vtx in self.vertices:
+                [self.canvas.scene().removeItem(v) for v in vtx]
+            self.vertices = []
+        else:
+            [tl.reset() for tl in self.vertices[self.rb]]
+            [self.canvas.scene().removeItem(tl) for tl in self.vertices[self.rb]]
 
     def resetRasterPoints(self):
         [tl.reset() for tl in self.rasterPoint]
