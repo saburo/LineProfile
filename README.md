@@ -1,59 +1,85 @@
 Line Profile
 ====
-
-A [QGIS](http://www.qgis.org) plugin that make line profiles (transects) for [micro-QGIS](https://sites.google.com/a/wisc.edu/wiscsims-micro-qgis/).
-
-## Description
-Line Profile plugin is a [QGIS](http://www.qgis.org) plugin plotting line profiles for [micro-QGIS](https://sites.google.com/a/wisc.edu/wiscsims-micro-qgis/).
-
-## Demo
 ![demo gif](img/demo.gif)
-<!-- ## VS.  -->
+
+Line Profile plugin is a [QGIS](http://www.qgis.org) plugin to make line profiles of vector and raster layers for [micro-QGIS](https://sites.google.com/a/wisc.edu/wiscsims-micro-qgis/).
 
 ## Requirement
 This plugin is using following python modules:
 * [GDAL Complete 1.11 framework package](http://www.kyngchaos.com/software/frameworks#gdal_complete)
 * [Matplotlib Python module](http:/http://www.kyngchaos.com/files/software/python//www.kyngchaos.com/software/python)
-* [NumPy](NumPy-1.8.0-1.dmg)
-
-## Usage
-プラグインのインストール後，ツールバーのアイコンをクリックすると下部にプラグインのドックが表示される．
-目的のレイヤーを選択し，Add Dataボタンを押すとポップアップが表示されるので．プロットしたいデータを選択する．
-断面線の始点クリックすると断面線が描かれる．右クリックで終点を設定できる．
-断面線を描くと，自動的にLine Profileが描画される．
-
-ドック右端にあるテーブルの，各データ名右にある歯車マークをダブルクリックすることによって，各データについてのオプションを設定できる．
-
-RasterLayerとVectorLayerで，それぞれに選択できるオプションがある．
-RasterLayer:
- Full resolution
- Moving average
-
-VectorLayer:
- Maximum distance from the profile line
- Nearest vertix
-
+* [NumPy](http://www.numpy.org/)
 
 ## Installation
 The most recent development version of Line Profile is available through the repository hosted on Github.
+
 **With git command**
-```sh
-> cd path-to-qgis-plugin-folder (e.g.: ~/.qgis2/python/plugins)
-> git clone https://github.com/saburo/LineProfile.git
-```
+ * **macOS (terminal)**
+ ```sh
+ cd ~/.qgis2/python/plugins
+ git clone https://github.com/saburo/LineProfile.git
+ ```
+ * **Windows (command prompt)**
+ ```bash
+ cd %HOMEPATH%\.qgis2\pthon\plugins
+ git clone https://github.com/saburo/LineProfile.git
+ ```
 
 **Without git command**
 * Donwload zip file from [here](https://github.com/saburo/LineProfile/archive/master.zip)
 * Unzip file and rename folder to "LineProfile"
-* Copy the folder to QGIS plugin folder "`~/.qgis2/python/plugins/`"  
+* Copy the "LineProfile" folder to QGIS plugin folder:
+ * **macOS:** "`/Users/your-username/.qgis2/python/plugins`"
+ * **Windows:** "`C:\Users\your-username\.qgis2\pthon\plugins`"
 
-<!-- ## Contribution -->
+After the installation of LineProfile, launch QGIS, then click on the checkbox for the LineProfile in the `Manege and Install Plugins` window.
+
+## Usage
+Launch LineProfile from `Plugins > Line Profile` menu or by clicking the WiscSIMS button in the plugin toolbar.
+
+##### Adding data:
+Select one of the layers in the Layers Panel of your QGIS project, then click `Add Data` button at middle-right of the LineProfile widget. You can select a data in the layer from dropdown menu in the pop-up window.
+
+##### Drawing profile line:
+ * __Left click__: Create a vertex of profile line
+ * __Right click__: Terminate profile line
+ * __Double left click__: Cancel/remove profile line
+
+##### Plotting a profile:
+Line profile is automatically drawn/updated when profile line is terminated.
+
+##### Select options:
+You can bring up plot option window by double click on cog icon right side of each data in the listbox.
+
+## Options
+Both raster and vector layers have following options.
+
+##### Raster layer:
+ * Full resolution (every pixels will be sampled)
+ * Moving average
+ * Area sampling
+
+##### Vector layer:
+ * Maximum distance from the profile line
+ * Tie-lines between data point and profile line
+ * [ToDo] Nearest vertix
+
+##### Common:
+ * Plot color
+ * Enable/disable
+
+##### Developmental:
+ * Display sampling area for area sampling
+ * Display sampling spots for area sampling
+ * Normalize distance of `Profile Line 2` to `Profile Line 1`
+
+## Other features
+* Display a white marker on a profile line which indicates current cursor position in the profile line plot.
+* Display tie lines that represent projected positions of features (data point) on a profile line.
+* Seconday profile line.
 
 ## Licence
-This plugin is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
+See the [LICENSE](LICENSE.md) file for license rights and limitations (GNU v3.0).
 
 ## Author
-Kouki Kitajima [[saburo](https://github.com/saburo)]  
-
-
-Copyright © 2015 Kouki Kitajima
+Kouki Kitajima @ WiscSIMS [[saburo](https://github.com/saburo)]
