@@ -37,38 +37,38 @@ After the installation of LineProfile, launch QGIS, then click on the checkbox f
 ## Usage
 Launch LineProfile from `Plugins > Line Profile` menu or by clicking the WiscSIMS button in the plugin toolbar.
 
-##### Adding data:
+#### Adding data:
 Select one of the layers in the Layers Panel of your QGIS project, then click `Add Data` button at middle-right of the LineProfile widget. You can select a data in the layer from dropdown menu in the pop-up window.
 
-##### Drawing profile line:
+#### Drawing profile line:
  * __Left click__: Create a vertex of profile line
  * __Right click__: Terminate profile line
  * __Double left click__: Cancel/remove profile line
 
-##### Plotting a profile:
+#### Plotting a profile:
 Line profile is automatically drawn/updated when profile line is terminated.
 
-##### Select options:
+#### Select options:
 You can bring up plot option window by double click on cog icon right side of each data in the listbox.
 
 ## Options
 Both raster and vector layers have following options.
 
-##### Raster layer:
+#### Raster layer:
  * Full resolution (every pixels will be sampled)
  * Moving average
  * Area sampling
 
-##### Vector layer:
+#### Vector layer:
  * Maximum distance from the profile line
  * Tie-lines between data point and profile line
  * [ToDo] Nearest vertix
 
-##### Common:
+#### Common:
  * Plot color
  * Enable/disable
 
-##### Developmental:
+#### Developmental:
  * Display sampling area for area sampling
  * Display sampling spots for area sampling
  * Normalize distance of `Profile Line 2` to `Profile Line 1`
@@ -79,7 +79,7 @@ Both raster and vector layers have following options.
 * Seconday profile line.
 
 ## Licence
-See the [LICENSE](LICENSE.md) file for license rights and limitations (GNU v3.0).
+See the [LICENSE](LICENSE) file for license rights and limitations (GNU v3.0).
 
 ## Author
 Kouki Kitajima @ WiscSIMS [[saburo](https://github.com/saburo)]
