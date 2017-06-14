@@ -26,7 +26,7 @@ class ProfileLineTool(QgsMapTool):
         self.rasterPoint = []
         self.samplingRange = []
 
-        self.plColor = [QColor(255, 20, 20, 250), 
+        self.plColor = [QColor(255, 20, 20, 250),
                         QColor(20, 20, 255, 250),
                         QColor(20, 255, 20, 250)]
 
@@ -42,7 +42,7 @@ class ProfileLineTool(QgsMapTool):
         self.changeProfileLine(cIndex)
         self.vertices.append([])
         self.tieLines.append([])
-        
+
         return cIndex
 
     def getCurrentProfileLine(self):
@@ -136,13 +136,16 @@ class ProfileLineTool(QgsMapTool):
 
     def drawTieLine(self, pts):
         self.resetTieLines(True)
+        myColor = [QColor(255, 255, 100, 200), QColor(100, 255, 255, 200)]
         for pIndex in xrange(len(pts)):
-            r = 0.35
-            pColor = self.plColor[pIndex]
-            yColor = QColor(255,240,60)
-            color = QColor(pColor.red()   * r + yColor.red()   * (1 - r),
-                           pColor.green() * r + yColor.green() * (1 - r),
-                           pColor.blue()  * r + yColor.blue()  * (1 - r))
+            # r = 0.35
+            # pColor = QColor(255, 255, 100, 200)
+            # pColor = self.plColor[pIndex]
+            # yColor = QColor(255,240,60)
+            # color = QColor(pColor.red()   * r + yColor.red()   * (1 - r),
+            #                pColor.green() * r + yColor.green() * (1 - r),
+            #                pColor.blue()  * r + yColor.blue()  * (1 - r))
+            color = myColor[pIndex]
             color.setAlpha(150)
             self.tieLines.append([])
             for pt in pts[pIndex]:
@@ -227,7 +230,7 @@ class ProfileLineTool(QgsMapTool):
             # vt.setIconType(QgsVertexMarker.ICON_BOX)
             # vt.setIconSize(2)
             # vt.setColor(QColor(255, 0, 220, 200))
-            # vt.setCenter(qpt) 
+            # vt.setCenter(qpt)
             # self.samplingRange.append(vt)
         # self.samplingRange.append(tl)
 
