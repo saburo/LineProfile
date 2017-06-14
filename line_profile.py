@@ -95,7 +95,7 @@ class LineProfile:
         self.dpTool = None
 
         self.closingFlag = False
-        self.debugFlag = False 
+        self.debugFlag = False
 
         self.model = MyTableViewModel()
 
@@ -223,7 +223,7 @@ class LineProfile:
         """Run method that performs all the real work"""
         self.action.setChecked(True)
         if not self.dock:
-            self.dock = DockWidget(self.iface.mainWindow(), 
+            self.dock = DockWidget(self.iface.mainWindow(),
                                    self.iface, self.model)
             self.dock.showDockWidget()
             self.plotTool.addPlotWidget(self.dock.myFrame)
@@ -271,7 +271,7 @@ class LineProfile:
             self.canvas.setMapTool(self.profLineTool)
             QObject.connect(self.canvas, SIGNAL("mapToolSet(QgsMapTool *)"),
                             self.mapToolChanged)
-            QObject.connect(self.canvas, 
+            QObject.connect(self.canvas,
                             SIGNAL('mapCanvasRefreshed()'), self.refreshModel)
             self.connectDock()
         else:
@@ -285,7 +285,7 @@ class LineProfile:
         self.disconnectTools()
         QObject.disconnect(self.canvas, SIGNAL("mapToolSet(QgsMapTool *)"),
                            self.mapToolChanged)
-        QObject.disconnect(self.canvas, 
+        QObject.disconnect(self.canvas,
                            SIGNAL('mapCanvasRefreshed()'), self.refreshModel)
         self.canvas.unsetMapTool(self.profLineTool)
         self.disconnectDock()
@@ -299,15 +299,15 @@ class LineProfile:
 
     def connectDock(self):
         self.disconnectDock()
-        QObject.connect(self.dock, SIGNAL("closed(PyQt_PyObject)"), 
+        QObject.connect(self.dock, SIGNAL("closed(PyQt_PyObject)"),
                         self.closePlugin)
         QObject.connect(self.dock.myExportProfileLineBtn,
                         SIGNAL("clicked()"), self.openExportProfileLineDialog)
-        QObject.connect(self.dock.Btn_ImportProfileLine, 
+        QObject.connect(self.dock.Btn_ImportProfileLine,
                         SIGNAL("clicked()"), self.openImportProfileLineDialog)
-        QObject.connect(self.dock.Btn_ExportPlot, 
+        QObject.connect(self.dock.Btn_ExportPlot,
                         SIGNAL("clicked()"), self.exportPlot)
-        QObject.connect(self.dock.ChkBox_TieLine, 
+        QObject.connect(self.dock.ChkBox_TieLine,
                         SIGNAL("stateChanged(int)"), self.updatePlot)
         QObject.connect(self.dock.ChkBox_ShowSamplingPoints,
                         SIGNAL("stateChanged(int)"), self.updatePlot)
@@ -369,7 +369,7 @@ class LineProfile:
             QObject.disconnect(self.dock.ChkBox_pLineNormalize,
                                SIGNAL("stateChanged(int)"), self.updatePlot)
 
-            self.dock.resizeEvent = None 
+            self.dock.resizeEvent = None
             QObject.disconnect(self.model,
                                SIGNAL('itemChanged(QStandardItem*)'),
                                self.myConnect)
@@ -502,7 +502,7 @@ class LineProfile:
                                 layer, field, config['maxDistance'], None, pIndex)
                 elif layer.type() == layer.RasterLayer:
                     myData = self.dpTool.getRasterProfile(pp,
-                                layer, field, config['fullRes'], 
+                                layer, field, config['fullRes'],
                                 int(config['areaSampling']) * config['areaSamplingWidth'])
                                 # int(self.dock.ChkBox_SamplingRange.isChecked()) * self.dock.SpinBox_SamplingWidth.value())
                     if config['areaSampling']:
@@ -515,7 +515,7 @@ class LineProfile:
                 data.append({'data': myData,
                              'label': label,
                              'configs': config,
-                             'layer': layer, 
+                             'layer': layer,
                              'layer_type': layer_type,
                              'color_org': color_org})
             self.plotData.append(data)
@@ -529,7 +529,7 @@ class LineProfile:
             for pt in self.dpTool.getSamplingPoints():
                 self.profLineTool.addVertex2(pt)
 
-        # # sampling range 
+        # # sampling range
         # if self.dock.ChkBox_SamplingRange.isChecked():
         #     self.profLineTool.drawSamplingLine(self.dpTool.getSamplingWidth())
 
@@ -584,7 +584,7 @@ class LineProfile:
                             layer, field, config['maxDistance'])
             elif layer.type() == layer.RasterLayer:
                 myData = self.dpTool.getRasterProfile(self.pLines,
-                            layer, field, config['fullRes'], 
+                            layer, field, config['fullRes'],
                             int(config['areaSampling']) * config['areaSamplingWidth'])
                             # int(self.dock.ChkBox_SamplingRange.isChecked()) * self.dock.SpinBox_SamplingWidth.value())
                 if config['areaSampling']:
@@ -597,7 +597,7 @@ class LineProfile:
             self.data.append({'data': myData,
                               'label': label,
                               'configs': config,
-                              'layer': layer, 
+                              'layer': layer,
                               'layer_type': layer_type,
                               'color_org': color_org})
         # draw tie lines
@@ -610,7 +610,7 @@ class LineProfile:
             for pt in self.dpTool.getSamplingPoints():
                 self.profLineTool.addVertex2(pt)
 
-        # # sampling range 
+        # # sampling range
         # if self.dock.ChkBox_SamplingRange.isChecked():
         #     self.profLineTool.drawSamplingLine(self.dpTool.getSamplingWidth())
 
@@ -826,7 +826,7 @@ class LineProfile:
                 myL = curL if curL >= myL else myL
             for d in data:
                 label = d['layer'].name() + '_' + d['label']
-                print 'config: ' 
+                print 'config: '
                 print d['configs']['movingAverage']
                 print 'before transpose'
                 print d['data']
@@ -851,7 +851,7 @@ class LineProfile:
 
 
 
-                
+
             # print fileName
             # print self.pLines
             # print self.data
@@ -859,7 +859,7 @@ class LineProfile:
 
             # f = open(filenName, 'w')
 
-             
+
 
     def getLayerById(self, lid):
         l = [layer for layer in self.canvas.layers() if lid == layer.id()]
