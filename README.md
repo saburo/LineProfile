@@ -48,10 +48,10 @@ Select one of the layers in the Layers Panel of your QGIS project, then click `A
 #### Plotting a profile:
 Line profile is automatically drawn/updated when profile line is terminated.
 
-#### Select options:
+#### Select plot options:
 You can bring up plot option window by double click on cog icon right side of each data in the listbox.
 
-## Options
+## Plot Options
 Both raster and vector layers have following options.
 
 #### Raster layer:
@@ -62,7 +62,6 @@ Both raster and vector layers have following options.
 #### Vector layer:
  * Maximum distance from the profile line
  * Tie-lines between data point and profile line
- * [ToDo] Nearest vertix
 
 #### Common:
  * Plot color
@@ -71,12 +70,17 @@ Both raster and vector layers have following options.
 #### Developmental:
  * Display sampling area for area sampling
  * Display sampling spots for area sampling
- * Normalize distance of `Profile Line 2` to `Profile Line 1`
+ * Normalize distance (x) of `Profile Line 2` to `Profile Line 1`
+
+## Options
+* Export profile data as a text file (csv, tab deliminated)
+* Import/Export profile line
 
 ## Other features
-* Display a white marker on a profile line which indicates current cursor position in the profile line plot.
-* Display tie lines that represent projected positions of features (data point) on a profile line.
-* Seconday profile line.
+* Display a white marker on a profile line which indicates current cursor position in the profile line plot
+* Display tie lines that represent projected positions of features (data point) on a profile line
+* Seconday profile line
+* Save plot as a image (PDF, PNG, JPG, SVG)
 
 ## Licence
 See the [LICENSE](LICENSE) file for license rights and limitations (GNU v3.0).
