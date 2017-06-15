@@ -790,13 +790,15 @@ class LineProfile:
         if not self.dock.ChkBox_Tracer.isChecked() \
             or event.xdata is None \
             or event.ydata is None \
-            or len(self.pLines) < pIndex:
+            or len(self.pLines) < pIndex \
+            or len(normFactor) <= pIndex:
             return
         x = event.xdata / normFactor[pIndex]
         y = event.ydata
+        if self.dpTool.sumD(self.pLines[pIndex]) < x:
+            return
         pt = self.dpTool.getCurrentCoordinates(self.pLines[pIndex], x)
         self.profLineTool.addVertex2(pt)
-
 
     def exportProfileData(self):
         fileName = QFileDialog.getSaveFileName(self.iface.mainWindow(),
