@@ -238,10 +238,7 @@ class DataProcessingTool():
         x = None  # coordinate x
         y = None  # coordinate y
         i = 0
-        print 'pIndex in getProtectedPoint: ', pIndex
         for index, pLine in enumerate(pLines):  
-            print 'index:pIndex => ', index, ':', pIndex
-            print 'pLine: ', pLine
             slope = pLine['a']
             intercept = pLine['b']
             if slope == float('inf'):  # vertical profile line
