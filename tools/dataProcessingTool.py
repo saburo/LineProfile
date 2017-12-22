@@ -3,6 +3,7 @@ from PyQt4.QtCore import QPyNullVariant
 from math import atan, cos, sin, sqrt
 from qgis.core import QgsPoint, QgsRaster
 
+
 class DataProcessingTool():
 
     def __init__(self):
@@ -39,7 +40,7 @@ class DataProcessingTool():
         else:
             featuresForPlot = layer.getFeatures()
 
-        if distanceField:
+        if distanceField is not None:
             layer.startEditing()
 
         lid = layer.id()
@@ -55,11 +56,16 @@ class DataProcessingTool():
             tieLineFlag = False
 
         for f in featuresForPlot:
-            # calc coordinates of intercept between normal line and profile line
+            # calc coordinates of intercept between normal line and profile
+            # line
             if type(f.attribute(field)) is type(QPyNullVariant(int)):
                 continue
             pt = f.geometry().asPoint()
-            prjPoint = self.getProjectedPoint(pLines, pt, distLimit)
+            if distanceField is not None:
+                prjPoint = self.getProjectedPoint(pLines, pt, distLimit, pIndex)
+            else:
+                prjPoint = self.getProjectedPoint(pLines, pt, distLimit) 
+
             if prjPoint is not False:
                 d = self.sumD(pLines[:prjPoint[2]])
                 d += self.getDistance([prjPoint[0], prjPoint[1]],
@@ -70,11 +76,11 @@ class DataProcessingTool():
                 if tieLineFlag:
                     self.addTieLine(pIndex, list(pt), prjPoint[:2])
 
-                if distanceField:
+                if distanceField is not None:
                     f[distanceField] = d
                     layer.updateFeature(f)
 
-        if distanceField:
+        if distanceField is not None:
             layer.commitChanges()
         x, y = self.sortDataByX(x, y)
 
@@ -115,7 +121,7 @@ class DataProcessingTool():
         y = cu['s'][1] + yDirection * dY
 
         return [x, y]
- 
+
     def getRasterProfile(self, pLines, layer, band, fullRes, equiWidth=0):
         x = []
         y = []
@@ -129,9 +135,10 @@ class DataProcessingTool():
         cP = 0  # index number of current segment
         tmpD = 0  # current distance within current segment
         totalD = self.sumD(pLines)  # total distance of profile line
-        tmpDMax = self.sumD(pLines[0:cP + 1])  # max distance of current segment
+        # max distance of current segment
+        tmpDMax = self.sumD(pLines[0:cP + 1])
         tmpX, tmpY = pLines[cP]['s']
-        equiWidth = int(round( equiWidth / 2 / pixelSize))
+        equiWidth = int(round(equiWidth / 2 / pixelSize))
         self.setSamplingWidth(equiWidth)
         acP = -1
         while tmpD < totalD:
@@ -152,7 +159,7 @@ class DataProcessingTool():
                         dY = -1
                 else:
                     dX = abs(cos(atan(pLines[cP]['a']))) * direction
-                    dY = abs(sin(atan(pLines[cP]['a']))) * direction * slope 
+                    dY = abs(sin(atan(pLines[cP]['a']))) * direction * slope
 
                 # scale by pixel size of raster layer
                 dX *= pixelSize
@@ -164,10 +171,13 @@ class DataProcessingTool():
             if acP is not cP:
                 acP = cP
                 # start point
-                acP_s = self.getEquiPoints(pLines[acP]['s'][0], pLines[acP]['s'][1], equiWidth, dX, dY)
+                acP_s = self.getEquiPoints(pLines[acP]['s'][0], pLines[
+                                           acP]['s'][1], equiWidth, dX, dY)
                 # end point
-                acP_e = self.getEquiPoints(pLines[acP]['e'][0], pLines[acP]['e'][1], equiWidth, dX, dY)
-                self.addSamplingArea([acP_s[0], acP_s[-1], acP_e[0], acP_e[-1]])
+                acP_e = self.getEquiPoints(pLines[acP]['e'][0], pLines[
+                                           acP]['e'][1], equiWidth, dX, dY)
+                self.addSamplingArea(
+                    [acP_s[0], acP_s[-1], acP_e[0], acP_e[-1]])
             equiPoints = self.getEquiPoints(tmpX, tmpY, equiWidth, dX, dY)
             # qgsPoint[i] = QgsPoint(equiPoints[i].X, equiPoints[i].Y)
             tmpVal = 0
@@ -192,7 +202,8 @@ class DataProcessingTool():
         else:
             endPoint = pLines[len(pLines) - 1]['e']
             # qgsPoint = QgsPoint(tmpX, tmpY)
-            equiPoints = self.getEquiPoints(endPoint[0], endPoint[1], equiWidth, dX, dY)
+            equiPoints = self.getEquiPoints(
+                endPoint[0], endPoint[1], equiWidth, dX, dY)
             tmpVal = 0
             self.addSamplingRange(equiPoints)
             for n in xrange(0, len(equiPoints)):
@@ -221,14 +232,16 @@ class DataProcessingTool():
         res = dp.identify(point, QgsRaster.IdentifyFormatValue).results()
         return res[band] if res[band] is not None else 0
 
-    def getProjectedPoint(self, pLines, pt, distLimit):
+    def getProjectedPoint(self, pLines, pt, distLimit, pIndex=None):
         minDist = 1.0E+12
         tmpDist = 0.0
         x = None  # coordinate x
         y = None  # coordinate y
         i = 0
-
-        for index, pLine in enumerate(pLines):
+        print 'pIndex in getProtectedPoint: ', pIndex
+        for index, pLine in enumerate(pLines):  
+            print 'index:pIndex => ', index, ':', pIndex
+            print 'pLine: ', pLine
             slope = pLine['a']
             intercept = pLine['b']
             if slope == float('inf'):  # vertical profile line
@@ -309,11 +322,13 @@ class DataProcessingTool():
             return True
         return False
 
-    def getClosestVertex(self, pLines, pt):
+    def getClosestVertex(self, pLines, pt, pIndex=None):
         d = 1.0E+12
         segment = 0
         # First and last vertices shouldn't be the closest vertex.
         for index, pLine in enumerate(pLines):
+            if pIndex is not None and index != pIndex:
+                continue
             if index == 0:
                 tmpD = self.getDistance(pLine['e'], pt)
                 # excluding first vertex
@@ -377,7 +392,6 @@ class DataProcessingTool():
     def getTieLines(self):
         return self.tieLine
 
-
     def initSamplingPoints(self):
         self.samplingPoints = []
 
@@ -404,12 +418,13 @@ class DataProcessingTool():
 
     def setSamplingWidth(self, width):
         self.samplingWidth = width
+
     def getSamplingWidth(self):
         return self.samplingWidth
 
     def getDirectionSlope(self, pt):
         start = pt['s']
-        end   = pt['e']
+        end = pt['e']
 
         if end[0] > start[0]:
             direction = 1

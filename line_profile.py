@@ -264,6 +264,7 @@ class LineProfile:
             pass
 
     def initMapTool(self):
+        """ init map tool """
         curTool = self.canvas.mapTool()
         if re.search(r'ProfileLineTool', str(curTool)) is None:
             self.profLineTool = ProfileLineTool(self.canvas, self.action)
@@ -708,7 +709,7 @@ class LineProfile:
             dataProvider.addAttributes(
                 [QgsField(newFieldName, QVariant.Double)])
             layer.updateFields()
-            self.dpTool.getVectorProfile(self.pLines,
+            self.dpTool.getVectorProfile(self.pLines[pIndex],
                                          layer,
                                          field,
                                          config['maxDistance'],
